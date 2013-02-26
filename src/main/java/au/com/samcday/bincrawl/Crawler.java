@@ -31,36 +31,41 @@ public class Crawler {
         this.nntpClientPool = nntpClientPool;
     }
 
-    public Result crawl(BinaryProcessor processor, String group, int from, int to) throws Exception {
+    public Result crawl(BinaryPartProcessor processor, String group, int from, int to) throws Exception {
         // TODO: checked exceptions from nntpclientpool lease...
         NntpClient nntpClient = this.nntpClientPool.borrowObject();
 
-        LOG.info("Starting crawl of group {} of articles {} - {}", group, from, to);
-        nntpClient.group(group);
+        try {
+            LOG.info("Starting crawl of group {} of articles {} - {}", group, from, to);
+            nntpClient.group(group);
 
-        Result result = new Result();
+            Result result = new Result();
 
-        OverviewList overviewList = nntpClient.overview(from, to);
-        for(Overview overview : overviewList) {
-            LOG.trace("Processing group {} article {}", group, overview.getArticle());
+            OverviewList overviewList = nntpClient.overview(from, to);
+            for(Overview overview : overviewList) {
+                LOG.trace("Processing group {} article {}", group, overview.getArticle());
 
-            TimerContext ctx = this.crawlTimer.time();
-            try {
-                if(!this.processItem(processor, group, overview)) {
-                    result.ignored++;
+                TimerContext ctx = this.crawlTimer.time();
+                try {
+                    if(!this.processItem(processor, group, overview)) {
+                        result.ignored++;
+                    }
+                    result.processed++;
                 }
-                result.processed++;
+                finally {
+                    ctx.stop();
+                }
             }
-            finally {
-                ctx.stop();
-            }
-        }
 
-        result.missingArticles = overviewList.getMissingArticles();
-        return result;
+            result.missingArticles = overviewList.getMissingArticles();
+            return result;
+        }
+        finally {
+            this.nntpClientPool.returnObject(nntpClient);
+        }
     }
 
-    private boolean processItem(BinaryProcessor processor, String group, Overview overview) {
+    private boolean processItem(BinaryPartProcessor processor, String group, Overview overview) {
         // First step is to determine what part number this post is.
 
         // We phase thru the matches first, and save off the last matching position we found. If we don't find a match,
@@ -98,7 +103,7 @@ public class Crawler {
         String name = buf.toString();
         LOG.trace("Found binary part {} of {} for binary with subject {}", partNum, totalParts, name);
 
-        processor.process(group, name, overview.getDate(), overview.getBytes(), overview.getMessageId(), partNum,
+        processor.processPart(group, name, overview.getDate(), overview.getBytes(), overview.getMessageId(), partNum,
             totalParts);
 
         return true;

@@ -14,8 +14,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-public class RedisBinaryProcessor implements BinaryProcessor {
-    private static final Logger LOG = LoggerFactory.getLogger(RedisBinaryProcessor.class);
+public class RedisBinaryPartProcessor implements BinaryPartProcessor {
+    private static final Logger LOG = LoggerFactory.getLogger(RedisBinaryPartProcessor.class);
 
     private static final HashFunction SHA1 = Hashing.sha1();
     private static final Joiner PIPE_JOINER = Joiner.on("|");
@@ -23,12 +23,12 @@ public class RedisBinaryProcessor implements BinaryProcessor {
     private JedisPool redisPool;
 
     @Inject
-    public RedisBinaryProcessor(JedisPool redisPool) {
+    public RedisBinaryPartProcessor(JedisPool redisPool) {
         this.redisPool = redisPool;
     }
 
     @Override
-    public void process(String group, String name, Date date, int size, String messageId, int part, int totalParts) {
+    public void processPart(String group, String name, Date date, int size, String messageId, int part, int totalParts) {
         Jedis redisClient = this.redisPool.getResource();
 
         try {

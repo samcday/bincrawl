@@ -2,9 +2,6 @@ package au.com.samcday.bincrawl;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import redis.clients.jedis.Jedis;
-
-import java.util.List;
 
 public class App {
     public static final void main(String... args) throws Exception {
@@ -15,16 +12,9 @@ public class App {
 
         if(1==1) return;
 
-        Jedis jedis = new Jedis("localhost");
-        jedis.select(5);
-//        CrawlTask task = new CrawlTask("alt.binaries.teevee", jedis);
-//        task.call();
-//
-//        if(1==1) return;
-
         BinaryClassifier proc = new BinaryClassifier();
 
-        int total = 0;
+        /*int total = 0;
         List<String> items = jedis.lrange("binaryProcess", 0, 1000000);
         long start = System.currentTimeMillis();
         for(String binaryHash : items) {
@@ -38,7 +28,7 @@ public class App {
             else {
                 System.out.println("Classified " + fields.get(1) + " (" + binaryHash + ") as " + classification.name + " part " + classification.partNum + "/" + classification.totalParts);
             }
-        }
+        }*/
 
 //        System.out.println("Done " + (((double)System.currentTimeMillis() - (double)start) / (double)total) + "ms per item");
     }
