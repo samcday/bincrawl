@@ -10,9 +10,8 @@ public class App {
     public static final void main(String... args) throws Exception {
         Injector injector = Guice.createInjector(new AppModule());
 
-        Crawler crawler = injector.getInstance(Crawler.class);
-
-        crawler.crawl("alt.binaries.teevee", 477372648, 477572648);
+//        Crawler crawler = injector.getInstance(Crawler.class);
+//        Crawler.Result result = crawler.crawl("alt.binaries.teevee", 477372648, 477572648);
 
         if(1==1) return;
 
@@ -22,8 +21,6 @@ public class App {
 //        task.call();
 //
 //        if(1==1) return;
-
-
 
         BinaryClassifier proc = new BinaryClassifier();
 

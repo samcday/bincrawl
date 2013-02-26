@@ -123,11 +123,6 @@ public class BinaryClassifier {
                 catch(IllegalArgumentException iae) {
                     // Either "name" or "parts" named groups didn't exist, so it's a no go.
                 }
-//                System.out.println("Regex match! ID: " + regex.id);
-//                System.out.println(regex.pattern.pattern());
-//                System.out.println(subject);
-//                System.out.println(m.group("name"));
-//                System.out.println();
             }
         }
 
