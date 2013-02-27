@@ -5,6 +5,7 @@ import au.com.samcday.jnntp.Overview;
 import au.com.samcday.jnntp.OverviewList;
 import com.google.inject.Inject;
 import com.yammer.metrics.Metrics;
+import com.yammer.metrics.core.Counter;
 import com.yammer.metrics.core.Timer;
 import com.yammer.metrics.core.TimerContext;
 import org.slf4j.Logger;
@@ -35,6 +36,8 @@ public class Crawler {
         // TODO: checked exceptions from nntpclientpool lease...
         NntpClient nntpClient = this.nntpClientPool.borrowObject();
 
+        Counter crawledArticleCounter = Metrics.newCounter(Crawler.class, "crawled", group);
+
         try {
             LOG.info("Starting crawl of group {} of articles {} - {}", group, from, to);
             nntpClient.group(group);
@@ -51,6 +54,7 @@ public class Crawler {
                         result.ignored++;
                     }
                     result.processed++;
+                    crawledArticleCounter.inc();
                 }
                 finally {
                     ctx.stop();

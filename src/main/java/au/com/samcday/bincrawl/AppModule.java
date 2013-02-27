@@ -20,7 +20,7 @@ import java.net.MalformedURLException;
 public class AppModule implements Module {
     @Override
     public void configure(Binder binder) {
-//        binder.bind(NntpClientPool.class);//.asEagerSingleton();
+        binder.bind(BinaryPartProcessor.class).to(RedisBinaryPartProcessor.class);
     }
 
     // TODO: this should obviously be getting loaded from an external source.

@@ -2,17 +2,50 @@ package au.com.samcday.bincrawl;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.yammer.metrics.reporting.ConsoleReporter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import redis.clients.jedis.Jedis;
+import redis.clients.jedis.JedisPool;
+
+import java.util.concurrent.TimeUnit;
 
 public class App {
+    private static final Logger LOG = LoggerFactory.getLogger(App.class);
+
     public static final void main(String... args) throws Exception {
         Injector injector = Guice.createInjector(new AppModule());
 
+        ConsoleReporter.enable(5, TimeUnit.SECONDS);
+
 //        Crawler crawler = injector.getInstance(Crawler.class);
-//        Crawler.Result result = crawler.crawl("alt.binaries.teevee", 477372648, 477572648);
+//        BinaryPartProcessor partProcessor = injector.getInstance(BinaryPartProcessor.class);
+//        Crawler.Result result = crawler.crawl(partProcessor, "alt.binaries.teevee", 477372648, 477572648);
+//        LOG.info("Crawled {} articles with {} ignored and {} missing.", result.processed, result.ignored, result.missingArticles.size());
+
+        BinaryProcessor processor = injector.getInstance(BinaryProcessor.class);
+        Jedis redis = injector.getInstance(JedisPool.class).getResource();
+//        int failed = 0;
+//        for(int i = 0; i < redis.llen("binaryProcess"); i++) {
+//            String binaryHash = redis.lindex("binaryProcess", i);
+//            if(!processor.processBinary(binaryHash)) {
+//                failed++;
+//            }
+//        }
+//
+//        LOG.info("Done. Failed: {}", failed);
+//
+        int failed = 0;
+        for(int i = 0; i < redis.llen("binaryDone"); i++) {
+            String binaryHash = redis.lindex("binaryDone", i);
+            if(!processor.processCompletedBinary(binaryHash)) {
+                failed++;
+            }
+        }
+
+        LOG.info("Done. Failed: {}", failed);
 
         if(1==1) return;
-
-        BinaryClassifier proc = new BinaryClassifier();
 
         /*int total = 0;
         List<String> items = jedis.lrange("binaryProcess", 0, 1000000);

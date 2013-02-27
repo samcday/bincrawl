@@ -37,8 +37,8 @@ public class BinaryClassifier {
             public int compare(Regex o1, Regex o2) {
                 int v1 = o1.ordinal, v2 = o2.ordinal;
                 if(o1.ordinal == o2.ordinal) {
-                    v1 += o1.hashCode();
-                    v2 += o2.hashCode();
+                    v1 += o1.pattern.hashCode();
+                    v2 += o2.pattern.hashCode();
                 }
                 return v1 - v2;
             }

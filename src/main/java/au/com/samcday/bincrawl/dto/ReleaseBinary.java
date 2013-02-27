@@ -2,12 +2,15 @@ package au.com.samcday.bincrawl.dto;
 
 import org.joda.time.DateTime;
 
+import java.util.List;
+
 public class ReleaseBinary {
     private String binaryHash;
     private String group;
     private String poster;
     private DateTime date;
     private String subject;
+    private List<BinarySegment> binarySegments;
 
     public String getBinaryHash() {
         return binaryHash;
@@ -47,5 +50,13 @@ public class ReleaseBinary {
 
     public void setSubject(String subject) {
         this.subject = subject;
+    }
+
+    public List<BinarySegment> getBinarySegments() {
+        return binarySegments;
+    }
+
+    public void setBinarySegments(List<BinarySegment> binarySegments) {
+        this.binarySegments = binarySegments;
     }
 }

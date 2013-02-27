@@ -35,12 +35,12 @@ public class RedisBinaryPartProcessor implements BinaryPartProcessor {
             // Create the binary in Redis if it doesn't already exist.
             String binaryHash = this.createBinary(redisClient, group, name, date, totalParts);
 
-            String key = "binary:" + binaryHash;
+            String key = RedisKeys.binary(binaryHash);
             String value = PIPE_JOINER.join(size, messageId);
 
-            redisClient.hsetnx(key, "part:" + part, value);
+            redisClient.hsetnx(key, RedisKeys.binaryPart(part), value);
 
-            int numPartsDone = redisClient.hincrBy(key, "done", 1).intValue();
+            int numPartsDone = redisClient.hincrBy(key, RedisKeys.binaryDone, 1).intValue();
             if(numPartsDone >= totalParts) {
                 LOG.trace("Got all parts for binary with subject {} ({})", name, binaryHash);
                 redisClient.rpush("binaryDone", binaryHash);
@@ -56,13 +56,13 @@ public class RedisBinaryPartProcessor implements BinaryPartProcessor {
      */
     private String createBinary(Jedis redisClient, String group, String subject, Date date, int numParts) {
         String binaryHash = SHA1.newHasher().putString(group).putString(subject).hash().toString();
-        String keyName = "binary:" + binaryHash;
+        String keyName = RedisKeys.binary(binaryHash);
 
         Map<String, String> data = new HashMap<String, String>();
-        data.put("group", group);
-        data.put("subj", subject);
-        data.put("num", Integer.toString(numParts));
-        data.put("date", Long.toString(date.getTime()));
+        data.put(RedisKeys.binaryGroup, group);
+        data.put(RedisKeys.binarySubject, subject);
+        data.put(RedisKeys.binaryTotalParts, Integer.toString(numParts));
+        data.put(RedisKeys.binaryDate, Long.toString(date.getTime()));
 
         while(true) {
             if(redisClient.exists(keyName)) {
@@ -72,7 +72,7 @@ public class RedisBinaryPartProcessor implements BinaryPartProcessor {
             redisClient.watch(keyName);
             Transaction t = redisClient.multi();
             t.hmset(keyName, data);
-            t.lpush("binaryProcess", binaryHash);
+            t.lpush(RedisKeys.binaryProcess, binaryHash);
 
             if(t.exec() != null) {
                 LOG.info("Created new binary with subject {} ({})", subject, binaryHash);
