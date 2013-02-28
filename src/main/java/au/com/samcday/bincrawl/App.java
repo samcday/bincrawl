@@ -16,33 +16,39 @@ public class App {
     public static final void main(String... args) throws Exception {
         Injector injector = Guice.createInjector(new AppModule());
 
+//        BinaryClassifier classifier = injector.getInstance(BinaryClassifier.class);
+//        BinaryClassifier.Classification res = classifier.classify("alt.binaries.teevee", "[128471]-[FULL]-[#a.b.teevee]-[ Jimmy.Kimmel.2013.02.24.After.the.Oscars.Special.720p.HDTV.x264-2HD ]-[17/46] - \"jimmy.kimmel.2013.02.24.after.the.oscars.special.720p.hdtv.x264-2hd.r06\" yEnc");
+//
+//        if(1==1) return;
+
         ConsoleReporter.enable(5, TimeUnit.SECONDS);
+
+        Jedis redis = injector.getInstance(JedisPool.class).getResource();
+        BinaryProcessor processor = injector.getInstance(BinaryProcessor.class);
 
 //        Crawler crawler = injector.getInstance(Crawler.class);
 //        BinaryPartProcessor partProcessor = injector.getInstance(BinaryPartProcessor.class);
-//        Crawler.Result result = crawler.crawl(partProcessor, "alt.binaries.teevee", 477372648, 477572648);
+////        Crawler.Result result = crawler.crawl(partProcessor, "alt.binaries.teevee", 477372648, 477572648);
+//        Crawler.Result result = crawler.crawl(partProcessor, "alt.binaries.teevee", 477522648, 477572648);
 //        LOG.info("Crawled {} articles with {} ignored and {} missing.", result.processed, result.ignored, result.missingArticles.size());
 
-        BinaryProcessor processor = injector.getInstance(BinaryProcessor.class);
-        Jedis redis = injector.getInstance(JedisPool.class).getResource();
-//        int failed = 0;
+
+        int failed = 0;
 //        for(int i = 0; i < redis.llen("binaryProcess"); i++) {
 //            String binaryHash = redis.lindex("binaryProcess", i);
 //            if(!processor.processBinary(binaryHash)) {
 //                failed++;
 //            }
 //        }
-//
 //        LOG.info("Done. Failed: {}", failed);
-//
-        int failed = 0;
+
+        failed = 0;
         for(int i = 0; i < redis.llen("binaryDone"); i++) {
             String binaryHash = redis.lindex("binaryDone", i);
             if(!processor.processCompletedBinary(binaryHash)) {
                 failed++;
             }
         }
-
         LOG.info("Done. Failed: {}", failed);
 
         if(1==1) return;

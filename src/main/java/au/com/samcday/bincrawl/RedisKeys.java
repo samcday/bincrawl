@@ -13,7 +13,7 @@ public class RedisKeys {
     public static final String binaryDate = "dt";
     public static final String binaryDone = "d";
     public static final String binaryRelease = "r";
-
+    public static final String binaryReleaseNum = "rn";
 
     public static final String binaryProcess = "binaryProcess";
 }

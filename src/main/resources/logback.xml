@@ -7,7 +7,7 @@
         </layout>
     </appender>
 
-    <logger name="au.com.samcday.bincrawl" level="WARN"/>
+    <logger name="au.com.samcday.bincrawl" level="trace"/>
 
     <root level="debug">
         <appender-ref ref="STDOUT" />
