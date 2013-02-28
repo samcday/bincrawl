@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
+import java.io.FileOutputStream;
 import java.util.concurrent.TimeUnit;
 
 public class App {
@@ -15,6 +16,14 @@ public class App {
 
     public static final void main(String... args) throws Exception {
         Injector injector = Guice.createInjector(new AppModule());
+
+        NzbGenerator generator = injector.getInstance(NzbGenerator.class);
+
+        FileOutputStream fout = new FileOutputStream("/tmp/test.nzb");
+        fout.write(generator.build("09b160496d5e8d5dac1a53cc358bc84c9b252fbf"));
+        fout.close();
+
+        if(1==1) return;
 
 //        BinaryClassifier classifier = injector.getInstance(BinaryClassifier.class);
 //        BinaryClassifier.Classification res = classifier.classify("alt.binaries.teevee", "[128471]-[FULL]-[#a.b.teevee]-[ Jimmy.Kimmel.2013.02.24.After.the.Oscars.Special.720p.HDTV.x264-2HD ]-[17/46] - \"jimmy.kimmel.2013.02.24.after.the.oscars.special.720p.hdtv.x264-2hd.r06\" yEnc");
@@ -34,13 +43,13 @@ public class App {
 
 
         int failed = 0;
-//        for(int i = 0; i < redis.llen("binaryProcess"); i++) {
-//            String binaryHash = redis.lindex("binaryProcess", i);
-//            if(!processor.processBinary(binaryHash)) {
-//                failed++;
-//            }
-//        }
-//        LOG.info("Done. Failed: {}", failed);
+        for(int i = 0; i < redis.llen("binaryProcess"); i++) {
+            String binaryHash = redis.lindex("binaryProcess", i);
+            if(!processor.processBinary(binaryHash)) {
+                failed++;
+            }
+        }
+        LOG.info("Done. Failed: {}", failed);
 
         failed = 0;
         for(int i = 0; i < redis.llen("binaryDone"); i++) {
