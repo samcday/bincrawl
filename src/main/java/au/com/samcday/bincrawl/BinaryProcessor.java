@@ -10,25 +10,23 @@ import com.google.inject.Singleton;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Timer;
 import com.yammer.metrics.core.TimerContext;
-import org.apache.commons.io.IOUtils;
 import org.ektorp.CouchDbConnector;
 import org.ektorp.UpdateConflictException;
-import org.ektorp.http.HttpResponse;
 import org.ektorp.http.RestTemplate;
-import org.ektorp.http.StdResponseHandler;
 import org.ektorp.http.URI;
-import org.ektorp.util.Assert;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
-import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * This class handles processing recently discovered and recently completed binaries.
+ */
 @Singleton
 public class BinaryProcessor {
     private static final ObjectMapper MAPPER = new ObjectMapper();

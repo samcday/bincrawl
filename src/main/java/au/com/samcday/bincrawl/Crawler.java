@@ -1,9 +1,11 @@
 package au.com.samcday.bincrawl;
 
+import au.com.samcday.bincrawl.pool.NntpClientPool;
 import au.com.samcday.jnntp.NntpClient;
 import au.com.samcday.jnntp.Overview;
 import au.com.samcday.jnntp.OverviewList;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Counter;
 import com.yammer.metrics.core.Timer;
@@ -19,6 +21,7 @@ import java.util.regex.Pattern;
 /**
  * This class is responsible for crawling a fixed number of articles from a group. It is safe to use by multiple threads
  */
+@Singleton
 public class Crawler {
     private static final Logger LOG = LoggerFactory.getLogger(Crawler.class);
     private final Timer crawlTimer = Metrics.newTimer(Crawler.class, "posts", TimeUnit.MILLISECONDS, TimeUnit.SECONDS);

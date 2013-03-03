@@ -1,4 +1,4 @@
-package au.com.samcday.bincrawl;
+package au.com.samcday.bincrawl.pool;
 
 import au.com.samcday.bincrawl.configuration.NntpClientConfiguration;
 import au.com.samcday.jnntp.NntpClient;
@@ -24,6 +24,15 @@ public class NntpClientPool extends GenericObjectPool<NntpClient>  {
         this.setTestOnBorrow(true);
 
         // TODO: configurable settings for client idle times, etc.
+    }
+
+    public PooledNntpClient borrow() {
+        try {
+            return new PooledNntpClient(this, this.borrowObject());
+        }
+        catch(Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private static final class ClientFactory implements PoolableObjectFactory<NntpClient> {
@@ -66,4 +75,5 @@ public class NntpClientPool extends GenericObjectPool<NntpClient>  {
         public void passivateObject(NntpClient nntpClient) throws Exception {
         }
     }
+
 }

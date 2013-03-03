@@ -35,7 +35,7 @@ public class NzbGenerator {
             w.writeStartDocument();
             w.writeStartElement("http://www.newzbin.com/DTD/2003/nzb", "nzb"); {
                 w.writeStartElement("head"); {
-                    w.writeStartElement("meta"); w.writeAttribute("type", "title"); {
+                    w.writeStartElement("meta"); w.writeAttribute("type", "name"); {
                         w.writeCharacters(release.getName());
                     }; w.writeEndElement();
                 }; w.writeEndElement();
