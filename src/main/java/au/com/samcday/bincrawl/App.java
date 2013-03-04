@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
-import java.io.FileOutputStream;
 import java.util.concurrent.TimeUnit;
 
 public class App {
@@ -17,11 +16,16 @@ public class App {
     public static final void main(String... args) throws Exception {
         Injector injector = Guice.createInjector(new AppModule());
 
-        NzbGenerator generator = injector.getInstance(NzbGenerator.class);
+        /*NzbGenerator generator = injector.getInstance(NzbGenerator.class);
 
         FileOutputStream fout = new FileOutputStream("/tmp/test.nzb");
         fout.write(generator.build("09b160496d5e8d5dac1a53cc358bc84c9b252fbf"));
-        fout.close();
+        fout.close();*/
+
+        CrawlService svc = injector.getInstance(CrawlService.class);
+        System.out.println(svc.startAndWait());
+
+
 
         if(1==1) return;
 

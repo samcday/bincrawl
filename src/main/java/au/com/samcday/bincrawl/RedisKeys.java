@@ -1,5 +1,8 @@
 package au.com.samcday.bincrawl;
 
+/**
+ * TODO: should be putting a lot of the small discrete domain of key names here in flyweights.
+ */
 public class RedisKeys {
     public static final String binary(String hash) {
         return "b:" + hash;
@@ -16,4 +19,15 @@ public class RedisKeys {
     public static final String binaryReleaseNum = "rn";
 
     public static final String binaryProcess = "binaryProcess";
+
+    public static final String groups = "groups";
+
+    public static final String group(String group) {
+        return "group:" + group;
+    }
+    public static final String groupEnd = "end";
+
+    public static final String missing(String group) {
+        return "missing:" + group;
+    }
 }

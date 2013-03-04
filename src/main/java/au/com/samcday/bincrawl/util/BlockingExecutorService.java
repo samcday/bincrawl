@@ -103,6 +103,10 @@ public class BlockingExecutorService extends ForwardingExecutorService {
      * Waits for all executing tasks to complete.
      */
     public void waitForAll() throws InterruptedException {
+        if(this.inProgress.get() == 0) {
+            return;
+        }
+
         this.lock.lock();
         try {
             while(!this.isDone) {

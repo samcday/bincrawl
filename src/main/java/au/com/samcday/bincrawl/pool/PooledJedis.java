@@ -1,5 +1,7 @@
 package au.com.samcday.bincrawl.pool;
 
+import au.com.samcday.bincrawl.redis.BetterJedisCommands;
+import com.google.common.base.Optional;
 import redis.clients.jedis.*;
 
 import java.util.Collection;
@@ -7,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class PooledJedis implements JedisCommands, BinaryJedisCommands, AutoCloseable {
+public class PooledJedis implements JedisCommands, BinaryJedisCommands, BetterJedisCommands, AutoCloseable {
     private Jedis decorated;
     private JedisPool jedisPool;
 
@@ -17,727 +19,881 @@ public class PooledJedis implements JedisCommands, BinaryJedisCommands, AutoClos
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         jedisPool.returnResource(this.decorated);
     }
 
     @Override
-    public String set(String key, String value) {
-        return decorated.set(key, value);
+    public Optional<Long> hgetlong(String key, String field) {
+        String val = this.hget(key, field);
+        return Optional.fromNullable(val != null ? Long.parseLong(val) : null);
     }
 
     @Override
-    public String get(String key) {
-        return decorated.get(key);
+    public Long hset(String key, String field, Long value) {
+        return this.hset(key, field, Long.toString(value));
     }
 
     @Override
-    public Boolean exists(String key) {
-        return decorated.exists(key);
+    public String set(byte[] bytes, byte[] bytes2) {
+        return decorated.set(bytes, bytes2);
     }
 
     @Override
-    public String type(String key) {
-        return decorated.type(key);
+    public byte[] get(byte[] bytes) {
+        return decorated.get(bytes);
     }
 
     @Override
-    public Long expire(String key, int seconds) {
-        return decorated.expire(key, seconds);
+    public Boolean exists(byte[] bytes) {
+        return decorated.exists(bytes);
     }
 
     @Override
-    public Long expireAt(String key, long unixTime) {
-        return decorated.expireAt(key, unixTime);
+    public String type(byte[] bytes) {
+        return decorated.type(bytes);
     }
 
     @Override
-    public Long ttl(String key) {
-        return decorated.ttl(key);
+    public Long expire(byte[] bytes, int i) {
+        return decorated.expire(bytes, i);
     }
 
     @Override
-    public boolean setbit(String key, long offset, boolean value) {
-        return decorated.setbit(key, offset, value);
+    public Long expireAt(byte[] bytes, long l) {
+        return decorated.expireAt(bytes, l);
     }
 
     @Override
-    public boolean getbit(String key, long offset) {
-        return decorated.getbit(key, offset);
+    public Long ttl(byte[] bytes) {
+        return decorated.ttl(bytes);
     }
 
     @Override
-    public long setrange(String key, long offset, String value) {
-        return decorated.setrange(key, offset, value);
+    public byte[] getSet(byte[] bytes, byte[] bytes2) {
+        return decorated.getSet(bytes, bytes2);
     }
 
     @Override
-    public String getrange(String key, long startOffset, long endOffset) {
-        return decorated.getrange(key, startOffset, endOffset);
+    public Long setnx(byte[] bytes, byte[] bytes2) {
+        return decorated.setnx(bytes, bytes2);
     }
 
     @Override
-    public String getSet(String key, String value) {
-        return decorated.getSet(key, value);
+    public String setex(byte[] bytes, int i, byte[] bytes2) {
+        return decorated.setex(bytes, i, bytes2);
     }
 
     @Override
-    public Long setnx(String key, String value) {
-        return decorated.setnx(key, value);
+    public Long decrBy(byte[] bytes, long l) {
+        return decorated.decrBy(bytes, l);
     }
 
     @Override
-    public String setex(String key, int seconds, String value) {
-        return decorated.setex(key, seconds, value);
+    public Long decr(byte[] bytes) {
+        return decorated.decr(bytes);
     }
 
     @Override
-    public Long decrBy(String key, long integer) {
-        return decorated.decrBy(key, integer);
+    public Long incrBy(byte[] bytes, long l) {
+        return decorated.incrBy(bytes, l);
     }
 
     @Override
-    public Long decr(String key) {
-        return decorated.decr(key);
+    public Long incr(byte[] bytes) {
+        return decorated.incr(bytes);
     }
 
     @Override
-    public Long incrBy(String key, long integer) {
-        return decorated.incrBy(key, integer);
+    public Long append(byte[] bytes, byte[] bytes2) {
+        return decorated.append(bytes, bytes2);
     }
 
     @Override
-    public Long incr(String key) {
-        return decorated.incr(key);
+    public byte[] substr(byte[] bytes, int i, int i2) {
+        return decorated.substr(bytes, i, i2);
     }
 
     @Override
-    public Long append(String key, String value) {
-        return decorated.append(key, value);
+    public Long hset(byte[] bytes, byte[] bytes2, byte[] bytes3) {
+        return decorated.hset(bytes, bytes2, bytes3);
     }
 
     @Override
-    public String substr(String key, int start, int end) {
-        return decorated.substr(key, start, end);
+    public byte[] hget(byte[] bytes, byte[] bytes2) {
+        return decorated.hget(bytes, bytes2);
     }
 
     @Override
-    public Long hset(String key, String field, String value) {
-        return decorated.hset(key, field, value);
+    public Long hsetnx(byte[] bytes, byte[] bytes2, byte[] bytes3) {
+        return decorated.hsetnx(bytes, bytes2, bytes3);
     }
 
     @Override
-    public String hget(String key, String field) {
-        return decorated.hget(key, field);
+    public String hmset(byte[] bytes, Map<byte[], byte[]> map) {
+        return decorated.hmset(bytes, map);
     }
 
     @Override
-    public Long hsetnx(String key, String field, String value) {
-        return decorated.hsetnx(key, field, value);
+    public List<byte[]> hmget(byte[] bytes, byte[]... bytes2) {
+        return decorated.hmget(bytes, bytes2);
     }
 
     @Override
-    public String hmset(String key, Map<String, String> hash) {
-        return decorated.hmset(key, hash);
+    public Long hincrBy(byte[] bytes, byte[] bytes2, long l) {
+        return decorated.hincrBy(bytes, bytes2, l);
     }
 
     @Override
-    public List<String> hmget(String key, String... fields) {
-        return decorated.hmget(key, fields);
+    public Boolean hexists(byte[] bytes, byte[] bytes2) {
+        return decorated.hexists(bytes, bytes2);
     }
 
     @Override
-    public Long hincrBy(String key, String field, long value) {
-        return decorated.hincrBy(key, field, value);
+    public Long hdel(byte[] bytes, byte[]... bytes2) {
+        return decorated.hdel(bytes, bytes2);
     }
 
     @Override
-    public Boolean hexists(String key, String field) {
-        return decorated.hexists(key, field);
+    public Long hlen(byte[] bytes) {
+        return decorated.hlen(bytes);
     }
 
     @Override
-    public Long hdel(String key, String field) {
-        return decorated.hdel(key, field);
+    public Set<byte[]> hkeys(byte[] bytes) {
+        return decorated.hkeys(bytes);
     }
 
     @Override
-    public Long hlen(String key) {
-        return decorated.hlen(key);
+    public Collection<byte[]> hvals(byte[] bytes) {
+        return decorated.hvals(bytes);
     }
 
     @Override
-    public Set<String> hkeys(String key) {
-        return decorated.hkeys(key);
+    public Map<byte[], byte[]> hgetAll(byte[] bytes) {
+        return decorated.hgetAll(bytes);
     }
 
     @Override
-    public List<String> hvals(String key) {
-        return decorated.hvals(key);
+    public Long rpush(byte[] bytes, byte[]... bytes2) {
+        return decorated.rpush(bytes, bytes2);
     }
 
     @Override
-    public Map<String, String> hgetAll(String key) {
-        return decorated.hgetAll(key);
+    public Long lpush(byte[] bytes, byte[]... bytes2) {
+        return decorated.lpush(bytes, bytes2);
     }
 
     @Override
-    public Long rpush(String key, String string) {
-        return decorated.rpush(key, string);
+    public Long llen(byte[] bytes) {
+        return decorated.llen(bytes);
     }
 
     @Override
-    public Long lpush(String key, String string) {
-        return decorated.lpush(key, string);
+    public List<byte[]> lrange(byte[] bytes, int i, int i2) {
+        return decorated.lrange(bytes, i, i2);
     }
 
     @Override
-    public Long llen(String key) {
-        return decorated.llen(key);
+    public String ltrim(byte[] bytes, int i, int i2) {
+        return decorated.ltrim(bytes, i, i2);
     }
 
     @Override
-    public List<String> lrange(String key, long start, long end) {
-        return decorated.lrange(key, start, end);
+    public byte[] lindex(byte[] bytes, int i) {
+        return decorated.lindex(bytes, i);
     }
 
     @Override
-    public String ltrim(String key, long start, long end) {
-        return decorated.ltrim(key, start, end);
+    public String lset(byte[] bytes, int i, byte[] bytes2) {
+        return decorated.lset(bytes, i, bytes2);
     }
 
     @Override
-    public String lindex(String key, long index) {
-        return decorated.lindex(key, index);
+    public Long lrem(byte[] bytes, int i, byte[] bytes2) {
+        return decorated.lrem(bytes, i, bytes2);
     }
 
     @Override
-    public String lset(String key, long index, String value) {
-        return decorated.lset(key, index, value);
+    public byte[] lpop(byte[] bytes) {
+        return decorated.lpop(bytes);
     }
 
     @Override
-    public Long lrem(String key, long count, String value) {
-        return decorated.lrem(key, count, value);
+    public byte[] rpop(byte[] bytes) {
+        return decorated.rpop(bytes);
     }
 
     @Override
-    public String lpop(String key) {
-        return decorated.lpop(key);
+    public Long sadd(byte[] bytes, byte[]... bytes2) {
+        return decorated.sadd(bytes, bytes2);
     }
 
     @Override
-    public String rpop(String key) {
-        return decorated.rpop(key);
+    public Set<byte[]> smembers(byte[] bytes) {
+        return decorated.smembers(bytes);
     }
 
     @Override
-    public Long sadd(String key, String member) {
-        return decorated.sadd(key, member);
+    public Long srem(byte[] bytes, byte[]... bytes2) {
+        return decorated.srem(bytes, bytes2);
     }
 
     @Override
-    public Set<String> smembers(String key) {
-        return decorated.smembers(key);
+    public byte[] spop(byte[] bytes) {
+        return decorated.spop(bytes);
     }
 
     @Override
-    public Long srem(String key, String member) {
-        return decorated.srem(key, member);
+    public Long scard(byte[] bytes) {
+        return decorated.scard(bytes);
     }
 
     @Override
-    public String spop(String key) {
-        return decorated.spop(key);
+    public Boolean sismember(byte[] bytes, byte[] bytes2) {
+        return decorated.sismember(bytes, bytes2);
     }
 
     @Override
-    public Long scard(String key) {
-        return decorated.scard(key);
+    public byte[] srandmember(byte[] bytes) {
+        return decorated.srandmember(bytes);
     }
 
     @Override
-    public Boolean sismember(String key, String member) {
-        return decorated.sismember(key, member);
+    public Long zadd(byte[] bytes, double v, byte[] bytes2) {
+        return decorated.zadd(bytes, v, bytes2);
     }
 
     @Override
-    public String srandmember(String key) {
-        return decorated.srandmember(key);
+    public Long zadd(byte[] bytes, Map<Double, byte[]> doubleMap) {
+        return decorated.zadd(bytes, doubleMap);
     }
 
     @Override
-    public Long zadd(String key, double score, String member) {
-        return decorated.zadd(key, score, member);
+    public Set<byte[]> zrange(byte[] bytes, int i, int i2) {
+        return decorated.zrange(bytes, i, i2);
     }
 
     @Override
-    public Set<String> zrange(String key, int start, int end) {
-        return decorated.zrange(key, start, end);
+    public Long zrem(byte[] bytes, byte[]... bytes2) {
+        return decorated.zrem(bytes, bytes2);
     }
 
     @Override
-    public Long zrem(String key, String member) {
-        return decorated.zrem(key, member);
+    public Double zincrby(byte[] bytes, double v, byte[] bytes2) {
+        return decorated.zincrby(bytes, v, bytes2);
     }
 
     @Override
-    public Double zincrby(String key, double score, String member) {
-        return decorated.zincrby(key, score, member);
+    public Long zrank(byte[] bytes, byte[] bytes2) {
+        return decorated.zrank(bytes, bytes2);
     }
 
     @Override
-    public Long zrank(String key, String member) {
-        return decorated.zrank(key, member);
+    public Long zrevrank(byte[] bytes, byte[] bytes2) {
+        return decorated.zrevrank(bytes, bytes2);
     }
 
     @Override
-    public Long zrevrank(String key, String member) {
-        return decorated.zrevrank(key, member);
+    public Set<byte[]> zrevrange(byte[] bytes, int i, int i2) {
+        return decorated.zrevrange(bytes, i, i2);
     }
 
     @Override
-    public Set<String> zrevrange(String key, int start, int end) {
-        return decorated.zrevrange(key, start, end);
+    public Set<Tuple> zrangeWithScores(byte[] bytes, int i, int i2) {
+        return decorated.zrangeWithScores(bytes, i, i2);
     }
 
     @Override
-    public Set<Tuple> zrangeWithScores(String key, int start, int end) {
-        return decorated.zrangeWithScores(key, start, end);
+    public Set<Tuple> zrevrangeWithScores(byte[] bytes, int i, int i2) {
+        return decorated.zrevrangeWithScores(bytes, i, i2);
     }
 
     @Override
-    public Set<Tuple> zrevrangeWithScores(String key, int start, int end) {
-        return decorated.zrevrangeWithScores(key, start, end);
+    public Long zcard(byte[] bytes) {
+        return decorated.zcard(bytes);
     }
 
     @Override
-    public Long zcard(String key) {
-        return decorated.zcard(key);
+    public Double zscore(byte[] bytes, byte[] bytes2) {
+        return decorated.zscore(bytes, bytes2);
     }
 
     @Override
-    public Double zscore(String key, String member) {
-        return decorated.zscore(key, member);
+    public List<byte[]> sort(byte[] bytes) {
+        return decorated.sort(bytes);
     }
 
     @Override
-    public List<String> sort(String key) {
-        return decorated.sort(key);
+    public List<byte[]> sort(byte[] bytes, SortingParams sortingParams) {
+        return decorated.sort(bytes, sortingParams);
     }
 
     @Override
-    public List<String> sort(String key, SortingParams sortingParameters) {
-        return decorated.sort(key, sortingParameters);
+    public Long zcount(byte[] bytes, double v, double v2) {
+        return decorated.zcount(bytes, v, v2);
     }
 
     @Override
-    public Long zcount(String key, double min, double max) {
-        return decorated.zcount(key, min, max);
+    public Long zcount(byte[] bytes, byte[] bytes2, byte[] bytes3) {
+        return decorated.zcount(bytes, bytes2, bytes3);
     }
 
     @Override
-    public Set<String> zrangeByScore(String key, double min, double max) {
-        return decorated.zrangeByScore(key, min, max);
+    public Set<byte[]> zrangeByScore(byte[] bytes, double v, double v2) {
+        return decorated.zrangeByScore(bytes, v, v2);
     }
 
     @Override
-    public Set<String> zrevrangeByScore(String key, double max, double min) {
-        return decorated.zrevrangeByScore(key, max, min);
+    public Set<byte[]> zrangeByScore(byte[] bytes, double v, double v2, int i, int i2) {
+        return decorated.zrangeByScore(bytes, v, v2, i, i2);
     }
 
     @Override
-    public Set<String> zrangeByScore(String key, double min, double max, int offset, int count) {
-        return decorated.zrangeByScore(key, min, max, offset, count);
+    public Set<Tuple> zrangeByScoreWithScores(byte[] bytes, double v, double v2) {
+        return decorated.zrangeByScoreWithScores(bytes, v, v2);
     }
 
     @Override
-    public Set<String> zrevrangeByScore(String key, double max, double min, int offset, int count) {
-        return decorated.zrevrangeByScore(key, max, min, offset, count);
+    public Set<Tuple> zrangeByScoreWithScores(byte[] bytes, double v, double v2, int i, int i2) {
+        return decorated.zrangeByScoreWithScores(bytes, v, v2, i, i2);
     }
 
     @Override
-    public Set<Tuple> zrangeByScoreWithScores(String key, double min, double max) {
-        return decorated.zrangeByScoreWithScores(key, min, max);
+    public Set<Tuple> zrangeByScoreWithScores(byte[] bytes, byte[] bytes2, byte[] bytes3) {
+        return decorated.zrangeByScoreWithScores(bytes, bytes2, bytes3);
     }
 
     @Override
-    public Set<Tuple> zrevrangeByScoreWithScores(String key, double max, double min) {
-        return decorated.zrevrangeByScoreWithScores(key, max, min);
+    public Set<Tuple> zrangeByScoreWithScores(byte[] bytes, byte[] bytes2, byte[] bytes3, int i, int i2) {
+        return decorated.zrangeByScoreWithScores(bytes, bytes2, bytes3, i, i2);
     }
 
     @Override
-    public Set<Tuple> zrangeByScoreWithScores(String key, double min, double max, int offset, int count) {
-        return decorated.zrangeByScoreWithScores(key, min, max, offset, count);
+    public Set<byte[]> zrevrangeByScore(byte[] bytes, double v, double v2) {
+        return decorated.zrevrangeByScore(bytes, v, v2);
     }
 
     @Override
-    public Set<Tuple> zrevrangeByScoreWithScores(String key, double max, double min, int offset, int count) {
-        return decorated.zrevrangeByScoreWithScores(key, max, min, offset, count);
+    public Set<byte[]> zrevrangeByScore(byte[] bytes, double v, double v2, int i, int i2) {
+        return decorated.zrevrangeByScore(bytes, v, v2, i, i2);
     }
 
     @Override
-    public Long zremrangeByRank(String key, int start, int end) {
-        return decorated.zremrangeByRank(key, start, end);
+    public Set<byte[]> zrevrangeByScore(byte[] bytes, byte[] bytes2, byte[] bytes3) {
+        return decorated.zrevrangeByScore(bytes, bytes2, bytes3);
     }
 
     @Override
-    public Long zremrangeByScore(String key, double start, double end) {
-        return decorated.zremrangeByScore(key, start, end);
+    public Set<byte[]> zrevrangeByScore(byte[] bytes, byte[] bytes2, byte[] bytes3, int i, int i2) {
+        return decorated.zrevrangeByScore(bytes, bytes2, bytes3, i, i2);
     }
 
     @Override
-    public Long linsert(String key, BinaryClient.LIST_POSITION where, String pivot, String value) {
-        return decorated.linsert(key, where, pivot, value);
+    public Set<Tuple> zrevrangeByScoreWithScores(byte[] bytes, double v, double v2) {
+        return decorated.zrevrangeByScoreWithScores(bytes, v, v2);
     }
 
     @Override
-    public String set(byte[] key, byte[] value) {
-        return decorated.set(key, value);
+    public Set<Tuple> zrevrangeByScoreWithScores(byte[] bytes, double v, double v2, int i, int i2) {
+        return decorated.zrevrangeByScoreWithScores(bytes, v, v2, i, i2);
     }
 
     @Override
-    public byte[] get(byte[] key) {
-        return decorated.get(key);
+    public Set<Tuple> zrevrangeByScoreWithScores(byte[] bytes, byte[] bytes2, byte[] bytes3) {
+        return decorated.zrevrangeByScoreWithScores(bytes, bytes2, bytes3);
     }
 
     @Override
-    public Boolean exists(byte[] key) {
-        return decorated.exists(key);
+    public Set<Tuple> zrevrangeByScoreWithScores(byte[] bytes, byte[] bytes2, byte[] bytes3, int i, int i2) {
+        return decorated.zrevrangeByScoreWithScores(bytes, bytes2, bytes3, i, i2);
     }
 
     @Override
-    public String type(byte[] key) {
-        return decorated.type(key);
+    public Long zremrangeByRank(byte[] bytes, int i, int i2) {
+        return decorated.zremrangeByRank(bytes, i, i2);
     }
 
     @Override
-    public Long expire(byte[] key, int seconds) {
-        return decorated.expire(key, seconds);
+    public Long zremrangeByScore(byte[] bytes, double v, double v2) {
+        return decorated.zremrangeByScore(bytes, v, v2);
     }
 
     @Override
-    public Long expireAt(byte[] key, long unixTime) {
-        return decorated.expireAt(key, unixTime);
+    public Long zremrangeByScore(byte[] bytes, byte[] bytes2, byte[] bytes3) {
+        return decorated.zremrangeByScore(bytes, bytes2, bytes3);
     }
 
     @Override
-    public Long ttl(byte[] key) {
-        return decorated.ttl(key);
+    public Long linsert(byte[] bytes, BinaryClient.LIST_POSITION list_position, byte[] bytes2, byte[] bytes3) {
+        return decorated.linsert(bytes, list_position, bytes2, bytes3);
     }
 
     @Override
-    public byte[] getSet(byte[] key, byte[] value) {
-        return decorated.getSet(key, value);
+    public Long objectRefcount(byte[] bytes) {
+        return decorated.objectRefcount(bytes);
     }
 
     @Override
-    public Long setnx(byte[] key, byte[] value) {
-        return decorated.setnx(key, value);
+    public Long objectIdletime(byte[] bytes) {
+        return decorated.objectIdletime(bytes);
     }
 
     @Override
-    public String setex(byte[] key, int seconds, byte[] value) {
-        return decorated.setex(key, seconds, value);
+    public byte[] objectEncoding(byte[] bytes) {
+        return decorated.objectEncoding(bytes);
     }
 
     @Override
-    public Long decrBy(byte[] key, long integer) {
-        return decorated.decrBy(key, integer);
+    public Long lpushx(byte[] bytes, byte[] bytes2) {
+        return decorated.lpushx(bytes, bytes2);
     }
 
     @Override
-    public Long decr(byte[] key) {
-        return decorated.decr(key);
+    public Long rpushx(byte[] bytes, byte[] bytes2) {
+        return decorated.rpushx(bytes, bytes2);
     }
 
     @Override
-    public Long incrBy(byte[] key, long integer) {
-        return decorated.incrBy(key, integer);
+    public String set(String s, String s2) {
+        return decorated.set(s, s2);
     }
 
     @Override
-    public Long incr(byte[] key) {
-        return decorated.incr(key);
+    public String get(String s) {
+        return decorated.get(s);
     }
 
     @Override
-    public Long append(byte[] key, byte[] value) {
-        return decorated.append(key, value);
+    public Boolean exists(String s) {
+        return decorated.exists(s);
     }
 
     @Override
-    public byte[] substr(byte[] key, int start, int end) {
-        return decorated.substr(key, start, end);
+    public String type(String s) {
+        return decorated.type(s);
     }
 
     @Override
-    public Long hset(byte[] key, byte[] field, byte[] value) {
-        return decorated.hset(key, field, value);
+    public Long expire(String s, int i) {
+        return decorated.expire(s, i);
     }
 
     @Override
-    public byte[] hget(byte[] key, byte[] field) {
-        return decorated.hget(key, field);
+    public Long expireAt(String s, long l) {
+        return decorated.expireAt(s, l);
     }
 
     @Override
-    public Long hsetnx(byte[] key, byte[] field, byte[] value) {
-        return decorated.hsetnx(key, field, value);
+    public Long ttl(String s) {
+        return decorated.ttl(s);
     }
 
     @Override
-    public String hmset(byte[] key, Map<byte[], byte[]> hash) {
-        return decorated.hmset(key, hash);
+    public Boolean setbit(String s, long l, boolean b) {
+        return decorated.setbit(s, l, b);
     }
 
     @Override
-    public List<byte[]> hmget(byte[] key, byte[]... fields) {
-        return decorated.hmget(key, fields);
+    public Boolean getbit(String s, long l) {
+        return decorated.getbit(s, l);
     }
 
     @Override
-    public Long hincrBy(byte[] key, byte[] field, long value) {
-        return decorated.hincrBy(key, field, value);
+    public Long setrange(String s, long l, String s2) {
+        return decorated.setrange(s, l, s2);
     }
 
     @Override
-    public Boolean hexists(byte[] key, byte[] field) {
-        return decorated.hexists(key, field);
+    public String getrange(String s, long l, long l2) {
+        return decorated.getrange(s, l, l2);
     }
 
     @Override
-    public Long hdel(byte[] key, byte[] field) {
-        return decorated.hdel(key, field);
+    public String getSet(String s, String s2) {
+        return decorated.getSet(s, s2);
     }
 
     @Override
-    public Long hlen(byte[] key) {
-        return decorated.hlen(key);
+    public Long setnx(String s, String s2) {
+        return decorated.setnx(s, s2);
     }
 
     @Override
-    public Set<byte[]> hkeys(byte[] key) {
-        return decorated.hkeys(key);
+    public String setex(String s, int i, String s2) {
+        return decorated.setex(s, i, s2);
     }
 
     @Override
-    public Collection<byte[]> hvals(byte[] key) {
-        return decorated.hvals(key);
+    public Long decrBy(String s, long l) {
+        return decorated.decrBy(s, l);
     }
 
     @Override
-    public Map<byte[], byte[]> hgetAll(byte[] key) {
-        return decorated.hgetAll(key);
+    public Long decr(String s) {
+        return decorated.decr(s);
     }
 
     @Override
-    public Long rpush(byte[] key, byte[] string) {
-        return decorated.rpush(key, string);
+    public Long incrBy(String s, long l) {
+        return decorated.incrBy(s, l);
     }
 
     @Override
-    public Long lpush(byte[] key, byte[] string) {
-        return decorated.lpush(key, string);
+    public Long incr(String s) {
+        return decorated.incr(s);
     }
 
     @Override
-    public Long llen(byte[] key) {
-        return decorated.llen(key);
+    public Long append(String s, String s2) {
+        return decorated.append(s, s2);
     }
 
     @Override
-    public List<byte[]> lrange(byte[] key, int start, int end) {
-        return decorated.lrange(key, start, end);
+    public String substr(String s, int i, int i2) {
+        return decorated.substr(s, i, i2);
     }
 
     @Override
-    public String ltrim(byte[] key, int start, int end) {
-        return decorated.ltrim(key, start, end);
+    public Long hset(String s, String s2, String s3) {
+        return decorated.hset(s, s2, s3);
     }
 
     @Override
-    public byte[] lindex(byte[] key, int index) {
-        return decorated.lindex(key, index);
+    public String hget(String s, String s2) {
+        return decorated.hget(s, s2);
     }
 
     @Override
-    public String lset(byte[] key, int index, byte[] value) {
-        return decorated.lset(key, index, value);
+    public Long hsetnx(String s, String s2, String s3) {
+        return decorated.hsetnx(s, s2, s3);
     }
 
     @Override
-    public Long lrem(byte[] key, int count, byte[] value) {
-        return decorated.lrem(key, count, value);
+    public String hmset(String s, Map<String, String> stringStringMap) {
+        return decorated.hmset(s, stringStringMap);
     }
 
     @Override
-    public byte[] lpop(byte[] key) {
-        return decorated.lpop(key);
+    public List<String> hmget(String s, String... strings) {
+        return decorated.hmget(s, strings);
     }
 
     @Override
-    public byte[] rpop(byte[] key) {
-        return decorated.rpop(key);
+    public Long hincrBy(String s, String s2, long l) {
+        return decorated.hincrBy(s, s2, l);
     }
 
     @Override
-    public Long sadd(byte[] key, byte[] member) {
-        return decorated.sadd(key, member);
+    public Boolean hexists(String s, String s2) {
+        return decorated.hexists(s, s2);
     }
 
     @Override
-    public Set<byte[]> smembers(byte[] key) {
-        return decorated.smembers(key);
+    public Long hdel(String s, String... strings) {
+        return decorated.hdel(s, strings);
     }
 
     @Override
-    public Long srem(byte[] key, byte[] member) {
-        return decorated.srem(key, member);
+    public Long hlen(String s) {
+        return decorated.hlen(s);
     }
 
     @Override
-    public byte[] spop(byte[] key) {
-        return decorated.spop(key);
+    public Set<String> hkeys(String s) {
+        return decorated.hkeys(s);
     }
 
     @Override
-    public Long scard(byte[] key) {
-        return decorated.scard(key);
+    public List<String> hvals(String s) {
+        return decorated.hvals(s);
     }
 
     @Override
-    public Boolean sismember(byte[] key, byte[] member) {
-        return decorated.sismember(key, member);
+    public Map<String, String> hgetAll(String s) {
+        return decorated.hgetAll(s);
     }
 
     @Override
-    public byte[] srandmember(byte[] key) {
-        return decorated.srandmember(key);
+    public Long rpush(String s, String... strings) {
+        return decorated.rpush(s, strings);
     }
 
     @Override
-    public Long zadd(byte[] key, double score, byte[] member) {
-        return decorated.zadd(key, score, member);
+    public Long lpush(String s, String... strings) {
+        return decorated.lpush(s, strings);
     }
 
     @Override
-    public Set<byte[]> zrange(byte[] key, int start, int end) {
-        return decorated.zrange(key, start, end);
+    public Long llen(String s) {
+        return decorated.llen(s);
     }
 
     @Override
-    public Long zrem(byte[] key, byte[] member) {
-        return decorated.zrem(key, member);
+    public List<String> lrange(String s, long l, long l2) {
+        return decorated.lrange(s, l, l2);
     }
 
     @Override
-    public Double zincrby(byte[] key, double score, byte[] member) {
-        return decorated.zincrby(key, score, member);
+    public String ltrim(String s, long l, long l2) {
+        return decorated.ltrim(s, l, l2);
     }
 
     @Override
-    public Long zrank(byte[] key, byte[] member) {
-        return decorated.zrank(key, member);
+    public String lindex(String s, long l) {
+        return decorated.lindex(s, l);
     }
 
     @Override
-    public Long zrevrank(byte[] key, byte[] member) {
-        return decorated.zrevrank(key, member);
+    public String lset(String s, long l, String s2) {
+        return decorated.lset(s, l, s2);
     }
 
     @Override
-    public Set<byte[]> zrevrange(byte[] key, int start, int end) {
-        return decorated.zrevrange(key, start, end);
+    public Long lrem(String s, long l, String s2) {
+        return decorated.lrem(s, l, s2);
     }
 
     @Override
-    public Set<Tuple> zrangeWithScores(byte[] key, int start, int end) {
-        return decorated.zrangeWithScores(key, start, end);
+    public String lpop(String s) {
+        return decorated.lpop(s);
     }
 
     @Override
-    public Set<Tuple> zrevrangeWithScores(byte[] key, int start, int end) {
-        return decorated.zrevrangeWithScores(key, start, end);
+    public String rpop(String s) {
+        return decorated.rpop(s);
     }
 
     @Override
-    public Long zcard(byte[] key) {
-        return decorated.zcard(key);
+    public Long sadd(String s, String... strings) {
+        return decorated.sadd(s, strings);
     }
 
     @Override
-    public Double zscore(byte[] key, byte[] member) {
-        return decorated.zscore(key, member);
+    public Set<String> smembers(String s) {
+        return decorated.smembers(s);
     }
 
     @Override
-    public List<byte[]> sort(byte[] key) {
-        return decorated.sort(key);
+    public Long srem(String s, String... strings) {
+        return decorated.srem(s, strings);
     }
 
     @Override
-    public List<byte[]> sort(byte[] key, SortingParams sortingParameters) {
-        return decorated.sort(key, sortingParameters);
+    public String spop(String s) {
+        return decorated.spop(s);
     }
 
     @Override
-    public Long zcount(byte[] key, double min, double max) {
-        return decorated.zcount(key, min, max);
+    public Long scard(String s) {
+        return decorated.scard(s);
     }
 
     @Override
-    public Set<byte[]> zrangeByScore(byte[] key, double min, double max) {
-        return decorated.zrangeByScore(key, min, max);
+    public Boolean sismember(String s, String s2) {
+        return decorated.sismember(s, s2);
     }
 
     @Override
-    public Set<byte[]> zrangeByScore(byte[] key, double min, double max, int offset, int count) {
-        return decorated.zrangeByScore(key, min, max, offset, count);
+    public String srandmember(String s) {
+        return decorated.srandmember(s);
     }
 
     @Override
-    public Set<Tuple> zrangeByScoreWithScores(byte[] key, double min, double max) {
-        return decorated.zrangeByScoreWithScores(key, min, max);
+    public Long zadd(String s, double v, String s2) {
+        return decorated.zadd(s, v, s2);
     }
 
     @Override
-    public Set<Tuple> zrangeByScoreWithScores(byte[] key, double min, double max, int offset, int count) {
-        return decorated.zrangeByScoreWithScores(key, min, max, offset, count);
+    public Long zadd(String s, Map<Double, String> doubleStringMap) {
+        return decorated.zadd(s, doubleStringMap);
     }
 
     @Override
-    public Set<byte[]> zrevrangeByScore(byte[] key, double max, double min) {
-        return decorated.zrevrangeByScore(key, max, min);
+    public Set<String> zrange(String s, long l, long l2) {
+        return decorated.zrange(s, l, l2);
     }
 
     @Override
-    public Set<byte[]> zrevrangeByScore(byte[] key, double max, double min, int offset, int count) {
-        return decorated.zrevrangeByScore(key, max, min, offset, count);
+    public Long zrem(String s, String... strings) {
+        return decorated.zrem(s, strings);
     }
 
     @Override
-    public Set<Tuple> zrevrangeByScoreWithScores(byte[] key, double max, double min) {
-        return decorated.zrevrangeByScoreWithScores(key, max, min);
+    public Double zincrby(String s, double v, String s2) {
+        return decorated.zincrby(s, v, s2);
     }
 
     @Override
-    public Set<Tuple> zrevrangeByScoreWithScores(byte[] key, double max, double min, int offset, int count) {
-        return decorated.zrevrangeByScoreWithScores(key, max, min, offset, count);
+    public Long zrank(String s, String s2) {
+        return decorated.zrank(s, s2);
     }
 
     @Override
-    public Long zremrangeByRank(byte[] key, int start, int end) {
-        return decorated.zremrangeByRank(key, start, end);
+    public Long zrevrank(String s, String s2) {
+        return decorated.zrevrank(s, s2);
     }
 
     @Override
-    public Long zremrangeByScore(byte[] key, double start, double end) {
-        return decorated.zremrangeByScore(key, start, end);
+    public Set<String> zrevrange(String s, long l, long l2) {
+        return decorated.zrevrange(s, l, l2);
     }
 
     @Override
-    public Long linsert(byte[] key, BinaryClient.LIST_POSITION where, byte[] pivot, byte[] value) {
-        return decorated.linsert(key, where, pivot, value);
+    public Set<Tuple> zrangeWithScores(String s, long l, long l2) {
+        return decorated.zrangeWithScores(s, l, l2);
+    }
+
+    @Override
+    public Set<Tuple> zrevrangeWithScores(String s, long l, long l2) {
+        return decorated.zrevrangeWithScores(s, l, l2);
+    }
+
+    @Override
+    public Long zcard(String s) {
+        return decorated.zcard(s);
+    }
+
+    @Override
+    public Double zscore(String s, String s2) {
+        return decorated.zscore(s, s2);
+    }
+
+    @Override
+    public List<String> sort(String s) {
+        return decorated.sort(s);
+    }
+
+    @Override
+    public List<String> sort(String s, SortingParams sortingParams) {
+        return decorated.sort(s, sortingParams);
+    }
+
+    @Override
+    public Long zcount(String s, double v, double v2) {
+        return decorated.zcount(s, v, v2);
+    }
+
+    @Override
+    public Long zcount(String s, String s2, String s3) {
+        return decorated.zcount(s, s2, s3);
+    }
+
+    @Override
+    public Set<String> zrangeByScore(String s, double v, double v2) {
+        return decorated.zrangeByScore(s, v, v2);
+    }
+
+    @Override
+    public Set<String> zrangeByScore(String s, String s2, String s3) {
+        return decorated.zrangeByScore(s, s2, s3);
+    }
+
+    @Override
+    public Set<String> zrevrangeByScore(String s, double v, double v2) {
+        return decorated.zrevrangeByScore(s, v, v2);
+    }
+
+    @Override
+    public Set<String> zrangeByScore(String s, double v, double v2, int i, int i2) {
+        return decorated.zrangeByScore(s, v, v2, i, i2);
+    }
+
+    @Override
+    public Set<String> zrevrangeByScore(String s, String s2, String s3) {
+        return decorated.zrevrangeByScore(s, s2, s3);
+    }
+
+    @Override
+    public Set<String> zrangeByScore(String s, String s2, String s3, int i, int i2) {
+        return decorated.zrangeByScore(s, s2, s3, i, i2);
+    }
+
+    @Override
+    public Set<String> zrevrangeByScore(String s, double v, double v2, int i, int i2) {
+        return decorated.zrevrangeByScore(s, v, v2, i, i2);
+    }
+
+    @Override
+    public Set<Tuple> zrangeByScoreWithScores(String s, double v, double v2) {
+        return decorated.zrangeByScoreWithScores(s, v, v2);
+    }
+
+    @Override
+    public Set<Tuple> zrevrangeByScoreWithScores(String s, double v, double v2) {
+        return decorated.zrevrangeByScoreWithScores(s, v, v2);
+    }
+
+    @Override
+    public Set<Tuple> zrangeByScoreWithScores(String s, double v, double v2, int i, int i2) {
+        return decorated.zrangeByScoreWithScores(s, v, v2, i, i2);
+    }
+
+    @Override
+    public Set<String> zrevrangeByScore(String s, String s2, String s3, int i, int i2) {
+        return decorated.zrevrangeByScore(s, s2, s3, i, i2);
+    }
+
+    @Override
+    public Set<Tuple> zrangeByScoreWithScores(String s, String s2, String s3) {
+        return decorated.zrangeByScoreWithScores(s, s2, s3);
+    }
+
+    @Override
+    public Set<Tuple> zrevrangeByScoreWithScores(String s, String s2, String s3) {
+        return decorated.zrevrangeByScoreWithScores(s, s2, s3);
+    }
+
+    @Override
+    public Set<Tuple> zrangeByScoreWithScores(String s, String s2, String s3, int i, int i2) {
+        return decorated.zrangeByScoreWithScores(s, s2, s3, i, i2);
+    }
+
+    @Override
+    public Set<Tuple> zrevrangeByScoreWithScores(String s, double v, double v2, int i, int i2) {
+        return decorated.zrevrangeByScoreWithScores(s, v, v2, i, i2);
+    }
+
+    @Override
+    public Set<Tuple> zrevrangeByScoreWithScores(String s, String s2, String s3, int i, int i2) {
+        return decorated.zrevrangeByScoreWithScores(s, s2, s3, i, i2);
+    }
+
+    @Override
+    public Long zremrangeByRank(String s, long l, long l2) {
+        return decorated.zremrangeByRank(s, l, l2);
+    }
+
+    @Override
+    public Long zremrangeByScore(String s, double v, double v2) {
+        return decorated.zremrangeByScore(s, v, v2);
+    }
+
+    @Override
+    public Long zremrangeByScore(String s, String s2, String s3) {
+        return decorated.zremrangeByScore(s, s2, s3);
+    }
+
+    @Override
+    public Long linsert(String s, BinaryClient.LIST_POSITION list_position, String s2, String s3) {
+        return decorated.linsert(s, list_position, s2, s3);
+    }
+
+    @Override
+    public Long lpushx(String s, String s2) {
+        return decorated.lpushx(s, s2);
+    }
+
+    @Override
+    public Long rpushx(String s, String s2) {
+        return decorated.rpushx(s, s2);
+    }
+
+    public Pipeline pipelined() {
+        return decorated.pipelined();
+    }
+
+    public List<Object> pipelined(PipelineBlock jedisPipeline) {
+        return decorated.pipelined(jedisPipeline);
     }
 }

@@ -35,7 +35,7 @@ public class Crawler {
         this.nntpClientPool = nntpClientPool;
     }
 
-    public Result crawl(BinaryPartProcessor processor, String group, int from, int to) throws Exception {
+    public Result crawl(BinaryPartProcessor processor, String group, long from, long to) throws Exception {
         // TODO: checked exceptions from nntpclientpool lease...
         NntpClient nntpClient = this.nntpClientPool.borrowObject();
 
@@ -120,7 +120,7 @@ public class Crawler {
         /**
          * Number of articles that did not come back from server during crawl.
          */
-        List<Long> missingArticles;
+        public List<Long> missingArticles;
 
         /**
          * Number of articles processed.

@@ -2,6 +2,7 @@ package au.com.samcday.bincrawl;
 
 import au.com.samcday.bincrawl.configuration.NntpClientConfiguration;
 import au.com.samcday.bincrawl.configuration.RedisConfiguration;
+import au.com.samcday.bincrawl.pool.BetterJedisPool;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Provides;
@@ -12,7 +13,6 @@ import org.ektorp.http.HttpClient;
 import org.ektorp.http.StdHttpClient;
 import org.ektorp.impl.StdCouchDbConnector;
 import org.ektorp.impl.StdCouchDbInstance;
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 
 import java.net.MalformedURLException;
@@ -40,7 +40,7 @@ public class AppModule implements Module {
         config.setPort(Integer.parseInt(System.getProperty("nntp.port")));
         config.setUsername(System.getProperty("nntp.user"));
         config.setPassword(System.getProperty("nntp.pass"));
-//        config.setSsl(true);
+        config.setSsl(true);
         config.setMaxConnections(20);
         return config;
     }
@@ -62,8 +62,8 @@ public class AppModule implements Module {
 
     @Provides
     @Singleton
-    JedisPool provideJedisPool(RedisConfiguration config) {
-        JedisPool pool = new JedisPool(new JedisPoolConfig(), config.getHost());
+    BetterJedisPool provideJedisPool(RedisConfiguration config) {
+        BetterJedisPool pool = new BetterJedisPool(new JedisPoolConfig(), config.getHost());
         return pool;
     }
 }

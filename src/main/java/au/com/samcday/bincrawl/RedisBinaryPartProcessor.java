@@ -1,5 +1,6 @@
 package au.com.samcday.bincrawl;
 
+import au.com.samcday.bincrawl.pool.BetterJedisPool;
 import com.google.common.base.Joiner;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
@@ -7,7 +8,6 @@ import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Transaction;
 
 import java.util.Date;
@@ -20,10 +20,10 @@ public class RedisBinaryPartProcessor implements BinaryPartProcessor {
     private static final HashFunction SHA1 = Hashing.sha1();
     private static final Joiner PIPE_JOINER = Joiner.on("|");
 
-    private JedisPool redisPool;
+    private BetterJedisPool redisPool;
 
     @Inject
-    public RedisBinaryPartProcessor(JedisPool redisPool) {
+    public RedisBinaryPartProcessor(BetterJedisPool redisPool) {
         this.redisPool = redisPool;
     }
 

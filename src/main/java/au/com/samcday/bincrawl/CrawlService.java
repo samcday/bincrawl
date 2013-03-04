@@ -1,16 +1,21 @@
 package au.com.samcday.bincrawl;
 
-import au.com.samcday.bincrawl.pool.NntpClientPool;
+import au.com.samcday.bincrawl.pool.BetterJedisPool;
+import au.com.samcday.bincrawl.pool.PooledJedis;
+import au.com.samcday.bincrawl.tasks.ArticleUpdateTask;
+import au.com.samcday.bincrawl.tasks.GroupInfoTask;
+import au.com.samcday.bincrawl.util.AutoLockable;
 import au.com.samcday.bincrawl.util.BlockingExecutorService;
-import au.com.samcday.jnntp.GroupInfo;
-import au.com.samcday.jnntp.NntpClient;
-import com.google.common.util.concurrent.AbstractExecutionThreadService;
-import com.google.common.util.concurrent.ListeningExecutorService;
-import com.google.common.util.concurrent.MoreExecutors;
+import com.google.common.util.concurrent.*;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
+import com.google.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -18,32 +23,47 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * This Service is responsible for keeping a pool of crawling threads busy for the lifetime of the application.
  */
+@Singleton
 public class CrawlService extends AbstractExecutionThreadService {
+    private static final Logger LOG = LoggerFactory.getLogger(CrawlService.class);
+
     private BlockingExecutorService pool;
     private ListeningExecutorService listenablePool;
     private ConcurrentLinkedQueue<String> updateGroups;
     private ConcurrentLinkedQueue<String> backfillGroups;
-    private Map<String, GroupInfo> groups;
+    private Map<String, Group> groups;
     private final Lock workLock = new ReentrantLock(true);
     private final Condition workAvailable = workLock.newCondition();
-    private NntpClientPool nntpClientPool;
+    private BetterJedisPool redisPool;
+    private Provider<ArticleUpdateTask> updateTaskProvider;
+    private Provider<GroupInfoTask> groupInfoTaskProvider;
 
     @Inject
-    public CrawlService(NntpClientPool nntpClientPool) {
-        this.nntpClientPool = nntpClientPool;
+    public CrawlService(BetterJedisPool redisPool, Provider<ArticleUpdateTask> updateTaskProvider,
+            Provider<GroupInfoTask> groupInfoTaskProvider) {
+        this.updateTaskProvider = updateTaskProvider;
+        this.redisPool = redisPool;
+        this.groupInfoTaskProvider = groupInfoTaskProvider;
     }
 
     @Override
     protected void startUp() throws Exception {
+        this.updateGroups = new ConcurrentLinkedQueue<>();
+        this.backfillGroups = new ConcurrentLinkedQueue<>();
+        this.groups = new HashMap<>();
         this.pool = new BlockingExecutorService(20);
         this.listenablePool = MoreExecutors.listeningDecorator(this.pool);
     }
 
     @Override
     protected void run() throws Exception {
+        this.update();
+
         while(this.isRunning()) {
             Runnable r = this.getWork();
-            this.pool.execute(r);
+            if(r != null) {
+                this.pool.execute(r);
+            }
         }
     }
 
@@ -61,7 +81,8 @@ public class CrawlService extends AbstractExecutionThreadService {
             String group = this.updateGroups.poll();
             if(group != null) {
                 // Create job to crawl some posts for this group.
-                return null;
+                LOG.trace("I guess we could crawl {}?", group);
+                return new UpdateTaskWrapper(group);
             }
 
             group = this.backfillGroups.poll();
@@ -74,9 +95,10 @@ public class CrawlService extends AbstractExecutionThreadService {
             //  a) a job comes back and re-inserts a group back into update/backfill queues.
             //  b) the update() finishes executing, resulting in new work.
             // We loop here because of "spurious" wakeups that can occur from waiting on a Condition.
+            LOG.info("No work for me. Hibernating until update() or completed work gives me something to work with.");
             while(this.updateGroups.isEmpty() && this.backfillGroups.isEmpty() && this.isRunning()) {
                 // awaitUninterruptibly here because we don't want arbitrary interrupts fucking with our main update
-                // thread. If we're legitimately shutting down hen our triggerShutdown() will be signalling this
+                // thread. If we're legitimately shutting down then our triggerShutdown() will be signalling this
                 // Condition anyway.
                 this.workAvailable.awaitUninterruptibly();
             }
@@ -88,17 +110,58 @@ public class CrawlService extends AbstractExecutionThreadService {
         }
     }
 
-    private class UpdateTask implements Runnable {
+    public void update() {
+        LOG.info("Updating group info.");
+
+        try(AutoLockable ignored = AutoLockable.lock(this.workLock); PooledJedis redisClient = this.redisPool.get()) {
+            this.pool.waitForAll();
+
+            Set<String> groups = redisClient.smembers(RedisKeys.groups);
+            List<ListenableFuture<Group>> futures = new ArrayList<>();
+            for(String group : groups) {
+                futures.add(this.listenablePool.submit(this.groupInfoTaskProvider.get().configure(group)));
+            }
+
+            List<Group> groupData = Futures.allAsList(futures).get();
+            this.groups.clear();
+            this.updateGroups.clear();
+            this.backfillGroups.clear();
+
+            for(Group group : groupData) {
+                this.groups.put(group.name, group);
+                this.backfillGroups.offer(group.name);
+                this.updateGroups.offer(group.name);
+            }
+        }
+        catch(InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
+        catch(ExecutionException ee) {
+            LOG.warn("Couldn't update group info", ee);
+        }
+    }
+
+    private class UpdateTaskWrapper implements Runnable {
+        private ArticleUpdateTask task;
+        private String group;
+
+        public UpdateTaskWrapper(String group) {
+            this.group = group;
+            this.task = updateTaskProvider.get();
+            this.task.configure(group, groups.get(group));
+        }
+
         @Override
         public void run() {
-            NntpClient client = nntpClientPool.borrow();
-
             try {
-
+                if(this.task.call()) {
+                    updateGroups.offer(this.group);
+                }
             }
-            finally {
-                nntpClientPool.release(client);
+            catch(Exception e) {
+                LOG.error("Unhandled Exception during update task.", e);
             }
         }
     }
+
 }
