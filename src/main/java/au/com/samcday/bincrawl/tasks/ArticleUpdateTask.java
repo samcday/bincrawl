@@ -49,8 +49,8 @@ public class ArticleUpdateTask implements Callable<Boolean> {
             long current = redisClient.hgetlong(RedisKeys.group(this.group), RedisKeys.groupEnd).or(this.groupInfo.high);
             LOG.info("Apparently I'm up to article {} for group {}", current, this.group);
             long end;
-            if(current < this.groupInfo.high) {
-                long start = current;
+            if(current + 1 < this.groupInfo.high) {
+                long start = current + 1;
                 end = Math.min(start + this.numPosts, this.groupInfo.high);
 
                 Crawler.Result result = this.crawler.crawl(this.partProcessor, this.group, current, end);
@@ -64,6 +64,7 @@ public class ArticleUpdateTask implements Callable<Boolean> {
             }
             else {
                 end = current;
+                LOG.info("Nothing to crawl for group {}", this.group);
             }
 
             redisClient.hset(RedisKeys.group(this.group), RedisKeys.groupEnd, end);

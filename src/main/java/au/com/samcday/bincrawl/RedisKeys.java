@@ -19,6 +19,8 @@ public class RedisKeys {
     public static final String binaryReleaseNum = "rn";
 
     public static final String binaryProcess = "binaryProcess";
+    public static final String binaryProcessFailed = "binaryProcessFailed";
+    public static final String binaryComplete = "binaryComplete";
 
     public static final String groups = "groups";
 

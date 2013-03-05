@@ -1,5 +1,7 @@
-package au.com.samcday.bincrawl;
+package au.com.samcday.bincrawl.services;
 
+import au.com.samcday.bincrawl.Group;
+import au.com.samcday.bincrawl.RedisKeys;
 import au.com.samcday.bincrawl.pool.BetterJedisPool;
 import au.com.samcday.bincrawl.pool.PooledJedis;
 import au.com.samcday.bincrawl.tasks.ArticleUpdateTask;
@@ -116,6 +118,7 @@ public class CrawlService extends AbstractExecutionThreadService {
         try(AutoLockable ignored = AutoLockable.lock(this.workLock); PooledJedis redisClient = this.redisPool.get()) {
             this.pool.waitForAll();
 
+
             Set<String> groups = redisClient.smembers(RedisKeys.groups);
             List<ListenableFuture<Group>> futures = new ArrayList<>();
             for(String group : groups) {
@@ -155,7 +158,10 @@ public class CrawlService extends AbstractExecutionThreadService {
         public void run() {
             try {
                 if(this.task.call()) {
-                    updateGroups.offer(this.group);
+                    try(AutoLockable ignored = AutoLockable.lock(workLock)) {
+                        updateGroups.offer(this.group);
+                        workAvailable.signal();
+                    }
                 }
             }
             catch(Exception e) {

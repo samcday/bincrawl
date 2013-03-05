@@ -1,5 +1,7 @@
 package au.com.samcday.bincrawl;
 
+import au.com.samcday.bincrawl.services.BincrawlServiceManager;
+import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.yammer.metrics.reporting.ConsoleReporter;
@@ -22,10 +24,12 @@ public class App {
         fout.write(generator.build("09b160496d5e8d5dac1a53cc358bc84c9b252fbf"));
         fout.close();*/
 
-        CrawlService svc = injector.getInstance(CrawlService.class);
-        System.out.println(svc.startAndWait());
+        /*CrawlService svc = injector.getInstance(CrawlService.class);
+        System.out.println(svc.startAndWait());*/
 
-
+        ServiceManager sm = injector.getInstance(BincrawlServiceManager.class).get();
+        sm.startAsync();
+        sm.awaitHealthy();
 
         if(1==1) return;
 

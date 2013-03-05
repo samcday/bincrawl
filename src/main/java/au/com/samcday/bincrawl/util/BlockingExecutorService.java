@@ -31,7 +31,7 @@ public class BlockingExecutorService extends ForwardingExecutorService {
         this.numPermits = size;
         this.semaphore = new ReducibleSemaphore(size);
         this.inProgress = new AtomicInteger();
-        this.executor = new ThreadPoolExecutor(1, size, 1, TimeUnit.HOURS, new LinkedBlockingQueue<Runnable>()) {
+        this.executor = new ThreadPoolExecutor(size, size, 1, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>()) {
             @Override
             protected void afterExecute(Runnable r, Throwable t) {
                 if(inProgress.decrementAndGet() == 0) {

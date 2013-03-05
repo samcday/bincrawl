@@ -1,6 +1,7 @@
 package au.com.samcday.bincrawl;
 
 import au.com.samcday.bincrawl.dto.Release;
+import au.com.samcday.bincrawl.pool.BetterJedisPool;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Splitter;
@@ -17,7 +18,6 @@ import org.ektorp.http.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 
 import java.util.Iterator;
 import java.util.List;
@@ -36,12 +36,12 @@ public class BinaryProcessor {
 
     private Logger LOG = LoggerFactory.getLogger(BinaryProcessor.class);
 
-    private JedisPool redisPool;
+    private BetterJedisPool redisPool;
     private BinaryClassifier classifier;
     private CouchDbConnector couchDb;
 
     @Inject
-    public BinaryProcessor(JedisPool redisPool, BinaryClassifier classifier, CouchDbConnector couchDb) {
+    public BinaryProcessor(BetterJedisPool redisPool, BinaryClassifier classifier, CouchDbConnector couchDb) {
         this.redisPool = redisPool;
         this.classifier = classifier;
         this.couchDb = couchDb;

@@ -896,4 +896,32 @@ public class PooledJedis implements JedisCommands, BinaryJedisCommands, BetterJe
     public List<Object> pipelined(PipelineBlock jedisPipeline) {
         return decorated.pipelined(jedisPipeline);
     }
+
+    public List<byte[]> blpop(int timeout, byte[]... keys) {
+        return decorated.blpop(timeout, keys);
+    }
+
+    public List<byte[]> brpop(int timeout, byte[]... keys) {
+        return decorated.brpop(timeout, keys);
+    }
+
+    public List<String> blpop(int timeout, String... keys) {
+        return decorated.blpop(timeout, keys);
+    }
+
+    public List<String> brpop(int timeout, String... keys) {
+        return decorated.brpop(timeout, keys);
+    }
+
+    public String brpopsingle(int timeout, String key) {
+        List<String> result = this.brpop(timeout, key);
+        if(result != null) {
+            return result.get(1);
+        }
+        return null;
+    }
+
+    public Long del(String... keys) {
+        return decorated.del(keys);
+    }
 }

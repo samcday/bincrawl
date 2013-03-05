@@ -43,7 +43,7 @@ public class RedisBinaryPartProcessor implements BinaryPartProcessor {
             int numPartsDone = redisClient.hincrBy(key, RedisKeys.binaryDone, 1).intValue();
             if(numPartsDone >= totalParts) {
                 LOG.trace("Got all parts for binary with subject {} ({})", name, binaryHash);
-                redisClient.rpush("binaryDone", binaryHash);
+                redisClient.lpush(RedisKeys.binaryComplete, binaryHash);
             }
         }
         finally {
@@ -58,7 +58,7 @@ public class RedisBinaryPartProcessor implements BinaryPartProcessor {
         String binaryHash = SHA1.newHasher().putString(group).putString(subject).hash().toString();
         String keyName = RedisKeys.binary(binaryHash);
 
-        Map<String, String> data = new HashMap<String, String>();
+        Map<String, String> data = new HashMap<>();
         data.put(RedisKeys.binaryGroup, group);
         data.put(RedisKeys.binarySubject, subject);
         data.put(RedisKeys.binaryTotalParts, Integer.toString(numParts));
