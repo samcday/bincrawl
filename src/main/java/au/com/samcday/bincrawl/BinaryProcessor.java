@@ -2,6 +2,8 @@ package au.com.samcday.bincrawl;
 
 import au.com.samcday.bincrawl.dto.Release;
 import au.com.samcday.bincrawl.pool.BetterJedisPool;
+import au.com.samcday.bincrawl.pool.PooledJedis;
+import au.com.samcday.bincrawl.util.CloseableTimer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Splitter;
@@ -10,19 +12,19 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Timer;
-import com.yammer.metrics.core.TimerContext;
 import org.ektorp.CouchDbConnector;
 import org.ektorp.UpdateConflictException;
 import org.ektorp.http.RestTemplate;
 import org.ektorp.http.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
 
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import static au.com.samcday.bincrawl.util.CloseableTimer.startTimer;
 
 /**
  * This class handles processing recently discovered and recently completed binaries.
@@ -48,10 +50,7 @@ public class BinaryProcessor {
     }
 
     public boolean processBinary(String binaryHash) {
-        Jedis redisClient = this.redisPool.getResource();
-        TimerContext timerContext = this.processTimer.time();
-
-        try {
+        try(PooledJedis redisClient = this.redisPool.get(); CloseableTimer ignored = startTimer(this.processTimer)) {
             String key = RedisKeys.binary(binaryHash);
             List<String> fields = redisClient.hmget (key, RedisKeys.binaryGroup, RedisKeys.binarySubject);
             String subject = fields.get(1);
@@ -68,17 +67,10 @@ public class BinaryProcessor {
                 return false;
             }
         }
-        finally {
-            this.redisPool.returnResource(redisClient);
-            timerContext.stop();
-        }
     }
 
     public boolean processCompletedBinary(String binaryHash) {
-        Jedis redisClient = this.redisPool.getResource();
-        TimerContext timerContext = this.doneTimer.time();
-
-        try {
+        try(PooledJedis redisClient = this.redisPool.get(); CloseableTimer ignored = startTimer(this.doneTimer)) {
             String key = RedisKeys.binary(binaryHash);
             String releaseId = redisClient.hget(key, RedisKeys.binaryRelease);
             if(releaseId == null) {
@@ -101,14 +93,9 @@ public class BinaryProcessor {
                 infoBuilder.put("part" + i + "_id", parts.next());
             }
 
-//            this.couchDb.callUpdateHandler("_design/bincrawl", "addbinary", releaseId, infoBuilder.build());
             this.executeBetterUpdateHandler(releaseId, infoBuilder.build());
 
             return true;
-        }
-        finally {
-            timerContext.stop();
-            this.redisPool.returnResource(redisClient);
         }
     }
 
