@@ -1,6 +1,7 @@
 package au.com.samcday.bincrawl.pool;
 
 import au.com.samcday.bincrawl.configuration.NntpClientConfiguration;
+import au.com.samcday.bincrawl.misc.NNTPBandwidthMonitor;
 import au.com.samcday.jnntp.NntpClient;
 import au.com.samcday.jnntp.NntpClientBuilder;
 import com.google.inject.Inject;
@@ -13,8 +14,8 @@ import static au.com.samcday.jnntp.NntpClientBuilder.nntpClient;
 @Singleton
 public class NntpClientPool extends GenericObjectPool<NntpClient>  {
     @Inject
-    public NntpClientPool(NntpClientConfiguration clientConfiguration) {
-        super(new ClientFactory(clientConfiguration));
+    public NntpClientPool(NntpClientConfiguration clientConfiguration, NNTPBandwidthMonitor monitor) {
+        super(new ClientFactory(clientConfiguration, monitor));
 
         this.setMaxActive(clientConfiguration.getMaxConnections());
         this.setWhenExhaustedAction(WHEN_EXHAUSTED_BLOCK);
@@ -37,9 +38,11 @@ public class NntpClientPool extends GenericObjectPool<NntpClient>  {
 
     private static final class ClientFactory implements PoolableObjectFactory<NntpClient> {
         private NntpClientConfiguration clientConfiguration;
+        private NNTPBandwidthMonitor monitor;
 
-        private ClientFactory(NntpClientConfiguration clientConfiguration) {
+        private ClientFactory(NntpClientConfiguration clientConfiguration, NNTPBandwidthMonitor monitor) {
             this.clientConfiguration = clientConfiguration;
+            this.monitor = monitor;
         }
 
         @Override
@@ -48,6 +51,9 @@ public class NntpClientPool extends GenericObjectPool<NntpClient>  {
                 .port(this.clientConfiguration.getPort())
                 .ssl(this.clientConfiguration.isSsl());
             if(this.clientConfiguration.hasAuth()) builder.auth(this.clientConfiguration.getUsername(), this.clientConfiguration.getPassword());
+
+            NntpClient client = builder.build();
+            client.registerBandwidthHandler(this.monitor);
 
             return builder.build();
         }

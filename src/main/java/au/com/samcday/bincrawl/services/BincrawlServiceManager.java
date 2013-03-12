@@ -18,6 +18,6 @@ public class BincrawlServiceManager implements Provider<ServiceManager> {
     public BincrawlServiceManager(CrawlService crawlService, BinaryProcessService binaryProcessService,
             CompletedBinaryService completedBinaryService) {
         this.serviceManager = new ServiceManager(ImmutableList.<Service>of(
-            crawlService, binaryProcessService, completedBinaryService));
+            /*crawlService, */binaryProcessService/*, completedBinaryService*/));
     }
 }

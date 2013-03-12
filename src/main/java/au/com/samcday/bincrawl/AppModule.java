@@ -3,6 +3,8 @@ package au.com.samcday.bincrawl;
 import au.com.samcday.bincrawl.configuration.NntpClientConfiguration;
 import au.com.samcday.bincrawl.configuration.RedisConfiguration;
 import au.com.samcday.bincrawl.pool.BetterJedisPool;
+import au.com.samcday.bincrawl.regex.RegexSource;
+import au.com.samcday.bincrawl.regex.StaticRegexSource;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Provides;
@@ -21,6 +23,8 @@ public class AppModule implements Module {
     @Override
     public void configure(Binder binder) {
         binder.bind(BinaryPartProcessor.class).to(RedisBinaryPartProcessor.class);
+
+        binder.bind(RegexSource.class).to(StaticRegexSource.class);
     }
 
     // TODO: this should obviously be getting loaded from an external source.

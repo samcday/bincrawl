@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -118,7 +119,6 @@ public class CrawlService extends AbstractExecutionThreadService {
         try(AutoLockable ignored = AutoLockable.lock(this.workLock); PooledJedis redisClient = this.redisPool.get()) {
             this.pool.waitForAll();
 
-
             Set<String> groups = redisClient.smembers(RedisKeys.groups);
             List<ListenableFuture<Group>> futures = new ArrayList<>();
             for(String group : groups) {
@@ -141,6 +141,20 @@ public class CrawlService extends AbstractExecutionThreadService {
         }
         catch(ExecutionException ee) {
             LOG.warn("Couldn't update group info", ee);
+        }
+    }
+
+    public void addNewGroup(String groupName) {
+        try(AutoLockable ignored = AutoLockable.lock(this.workLock); PooledJedis redisClient = this.redisPool.get()) {
+            assert !this.groups.containsKey(groupName);
+            Future<Group> future = this.pool.submit(this.groupInfoTaskProvider.get().configure(groupName));
+            Group group = Futures.getUnchecked(future);
+            this.groups.put(groupName, group);
+            redisClient.hsetnx(RedisKeys.group(groupName), RedisKeys.groupEnd, Long.toString(group.high));
+
+            boolean backfill = redisClient.hget(RedisKeys.group(groupName), RedisKeys.groupMaxAge) != null;
+            if(backfill) this.backfillGroups.add(groupName);
+            this.updateGroups.add(groupName);
         }
     }
 

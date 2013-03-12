@@ -1,0 +1,20 @@
+<h1>Groups</h1>
+
+<table class="table">
+	<thead>
+		<tr>
+			<th></th>
+			<th>Availability</th>
+			<th>Status</th>
+		</tr>
+	</thead>
+
+	<tbody>
+		<tr ng-repeat="group in groups">
+			<td>{{group.name}}</td>
+			<td>
+				<button popover="Hello!">{{group.start || "???" | date:"mediumDate"}}</button>  {{group.end || "???" | date:"mediumDate"}}</td>
+			<td>OK</td>
+		</tr>
+	</tbody>
+</table>

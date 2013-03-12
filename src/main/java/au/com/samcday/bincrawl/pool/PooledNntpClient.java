@@ -4,6 +4,8 @@ import au.com.samcday.jnntp.GroupInfo;
 import au.com.samcday.jnntp.GroupListItem;
 import au.com.samcday.jnntp.NntpClient;
 import au.com.samcday.jnntp.OverviewList;
+import au.com.samcday.jnntp.bandwidth.BandwidthHandler;
+import au.com.samcday.jnntp.bandwidth.HandlerRegistration;
 import au.com.samcday.jnntp.exceptions.NntpClientAuthenticationException;
 import au.com.samcday.jnntp.exceptions.NntpClientConnectionError;
 
@@ -63,5 +65,10 @@ public class PooledNntpClient implements NntpClient, AutoCloseable {
     @Override
     public InputStream body(String messageId) {
         return decorated.body(messageId);
+    }
+
+    @Override
+    public HandlerRegistration registerBandwidthHandler(BandwidthHandler handler) {
+        return decorated.registerBandwidthHandler(handler);
     }
 }

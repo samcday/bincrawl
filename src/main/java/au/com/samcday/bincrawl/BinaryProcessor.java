@@ -129,6 +129,10 @@ public class BinaryProcessor {
                     // Ignore, on next loop we'll correctly find the document.
                 }
             }
+            else if(release.getCount() < classification.totalParts) {
+                release.setCount(classification.totalParts);
+                this.couchDb.update(release);
+            }
             return release;
         }
     }

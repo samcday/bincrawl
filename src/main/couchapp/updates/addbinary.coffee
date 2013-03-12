@@ -8,6 +8,9 @@
   newBinary.subject = q.name
   newBinary.date = new Date parseInt q.date
   newBinary.binarySegments = ({size: q["part#{i}_size"], messageId: q["part#{i}_id"]} for i in [1..q.num])
+
+  doc.date = newBinary.date if newBinary.date and (not doc.date or (new Date(doc.date) < newBinary.date))
+
   doc.binaries ?= []
   doc.binaries.push newBinary
   return [doc, "ok"]
