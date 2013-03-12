@@ -55,7 +55,7 @@ public class NntpClientPool extends GenericObjectPool<NntpClient>  {
             NntpClient client = builder.build();
             client.registerBandwidthHandler(this.monitor);
 
-            return builder.build();
+            return client;
         }
 
         @Override
