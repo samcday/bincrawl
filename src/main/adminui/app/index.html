@@ -22,9 +22,23 @@
       <script src="components/json3/lib/json3.min.js"></script>
     <![endif]-->
 
+    <div class="navbar navbar-static-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <a class="brand" href="#">Title</a>
+
+          <div class="navbar-text pull-right" ng-controller="BandwidthCtrl">
+            <i class="icon-upload"></i> {{upload | dataspeed}}
+            <i class="icon-download"></i> {{download | dataspeed}}
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Add your site or application content here -->
     <div class="container" ng-view></div>
 
+    <script src="components/underscore/underscore.js"></script>
     <script src="components/jquery/jquery.js"></script>
     <script src="components/angular/angular.js"></script>
     <script src="components/angular-resource/angular-resource.js"></script>
@@ -39,6 +53,8 @@
     <script src="scripts/controllers/main.js"></script>
     <script src="scripts/controllers/groups.js"></script>
     <script src="scripts/services/socket.js"></script>
+    <script src="scripts/controllers/bandwidth.js"></script>
+    <script src="scripts/filters/dataspeed.js"></script>
     <!-- endbuild -->
 
     <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->

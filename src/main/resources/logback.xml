@@ -8,6 +8,7 @@
     </appender>
 
     <logger name="au.com.samcday.bincrawl" level="info"/>
+    <logger name="org.atmosphere" level="info"/>
 
     <root level="debug">
         <appender-ref ref="STDOUT" />
