@@ -3,10 +3,7 @@ package au.com.samcday.bincrawl.util;
 import com.google.common.base.Throwables;
 import com.google.common.util.concurrent.ForwardingExecutorService;
 
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -28,10 +25,15 @@ public class BlockingExecutorService extends ForwardingExecutorService {
     private boolean isDone = false;
 
     public BlockingExecutorService(int size) {
+        this(size, Executors.defaultThreadFactory());
+    }
+
+    public BlockingExecutorService(int size, ThreadFactory threadFactory) {
         this.numPermits = size;
         this.semaphore = new ReducibleSemaphore(size);
         this.inProgress = new AtomicInteger();
-        this.executor = new ThreadPoolExecutor(size, size, 1, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>()) {
+        this.executor = new ThreadPoolExecutor(size, size, 1, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(),
+                threadFactory) {
             @Override
             protected void afterExecute(Runnable r, Throwable t) {
                 if(inProgress.decrementAndGet() == 0) {

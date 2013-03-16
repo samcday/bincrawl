@@ -1,19 +1,44 @@
 <h1>Groups</h1>
 
+<div class="row" ng-show="auth.loggedIn">
+	<div class="span12">
+			<a ng-click="addGroup()" class="btn btn-primary pull-right"><i class="icon-plus icon-white"></i> Add Group</a>
+	</div>
+</div>
+
 <table class="table">
 	<thead>
 		<tr>
-			<th></th>
+			<th width="100%"></th>
 			<th>Availability</th>
+			<th>Articles</th>
+			<th>Releases</th>
 			<th>Status</th>
 		</tr>
 	</thead>
 
 	<tbody>
 		<tr ng-repeat="group in groups">
-			<td>{{group.name}}</td>
 			<td>
-				<button popover="Hello!">{{group.start || "???" | date:"mediumDate"}}</button>  {{group.end || "???" | date:"mediumDate"}}</td>
+				<spinner tooltip="Crawling..." width="3" radius="4.5" hide="!(group.backfilling || group.updating)"></spinner>
+				<i tooltip="Backfilling" class="icon-backward" hide="!group.backfilling"></i>
+				<i tooltip="Updating" class="icon-forward" hide="!group.updating"></i>
+				{{group.name}}
+			</td>
+			<td style="white-space: nowrap">
+				<span tooltip-placement="left" tooltip-animation="true" tooltip="Article #{{group.firstPost}}">
+					{{group.firstPostDate || "???" | date:"mediumDate"}}
+				</span> - 
+				<span tooltip-placement="right" tooltip-animation="true" tooltip="Article #{{group.lastPost}}">
+					{{group.lastPostDate || "???" | date:"mediumDate"}}
+				</span>
+			</td>
+			<td>
+				<i>{{group.lastPost - group.firstPost}}</i>
+			</td>
+			<td>
+				<b tooltip="Made up of {{group.numBinaries}} binaries">{{group.numReleases}}</b>
+			</td>
 			<td>OK</td>
 		</tr>
 	</tbody>

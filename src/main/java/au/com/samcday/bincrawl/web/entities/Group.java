@@ -6,11 +6,13 @@ import org.joda.time.DateTime;
 public class Group {
     @NotEmpty
     private String name;
-    private Integer firstPost;
+    private Long firstPost;
     private DateTime firstPostDate;
-    private Integer lastPost;
+    private Long lastPost;
     private DateTime lastPostDate;
     private Integer maxAge;
+    private Long numBinaries;
+    private Long numReleases;
 
     public String getName() {
         return name;
@@ -20,11 +22,11 @@ public class Group {
         this.name = name;
     }
 
-    public Integer getFirstPost() {
+    public Long getFirstPost() {
         return firstPost;
     }
 
-    public void setFirstPost(Integer firstPost) {
+    public void setFirstPost(Long firstPost) {
         this.firstPost = firstPost;
     }
 
@@ -36,11 +38,11 @@ public class Group {
         this.firstPostDate = firstPostDate;
     }
 
-    public Integer getLastPost() {
+    public Long getLastPost() {
         return lastPost;
     }
 
-    public void setLastPost(Integer lastPost) {
+    public void setLastPost(Long lastPost) {
         this.lastPost = lastPost;
     }
 
@@ -58,5 +60,21 @@ public class Group {
 
     public void setMaxAge(Integer maxAge) {
         this.maxAge = maxAge;
+    }
+
+    public Long getNumBinaries() {
+        return numBinaries;
+    }
+
+    public void setNumBinaries(Long numBinaries) {
+        this.numBinaries = numBinaries;
+    }
+
+    public Long getNumReleases() {
+        return numReleases;
+    }
+
+    public void setNumReleases(Long numReleases) {
+        this.numReleases = numReleases;
     }
 }

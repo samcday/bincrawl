@@ -50,6 +50,7 @@ public class ArticleUpdateTask implements Callable<Boolean> {
             LOG.info("Apparently I'm up to article {} for group {}", current, this.group);
             long end;
             if(current + 1 < this.groupInfo.high) {
+                redisClient.publish("groupactivity", this.group + ":u");
                 long start = current + 1;
                 end = Math.min(start + this.numPosts, this.groupInfo.high);
 
@@ -61,6 +62,9 @@ public class ArticleUpdateTask implements Callable<Boolean> {
                     p.lpush(RedisKeys.missing(this.group), Long.toString(missing));
                 }
                 p.sync();
+
+                redisClient.hset(RedisKeys.group(this.group), RedisKeys.groupEndDate, result.dateRange.getEnd().getMillis());
+                redisClient.publish("groupactivity", this.group + ":!u");
             }
             else {
                 end = current;
@@ -68,6 +72,7 @@ public class ArticleUpdateTask implements Callable<Boolean> {
             }
 
             redisClient.hset(RedisKeys.group(this.group), RedisKeys.groupEnd, end);
+            redisClient.publish("groupupdates", this.group);
 
             return current < end;
         }

@@ -25,11 +25,13 @@
     <div class="navbar navbar-static-top">
       <div class="navbar-inner">
         <div class="container">
-          <a class="brand" href="#">Title</a>
+          <a class="brand" href="#">bincrawler.</a>
 
           <div class="navbar-text pull-right" ng-controller="BandwidthCtrl">
             <i class="icon-upload"></i> {{upload | dataspeed}}
             <i class="icon-download"></i> {{download | dataspeed}}
+
+            <i ng-hide="auth.loggedIn" ng-click="auth.showLogin()" class="icon-user"></i>
           </div>
         </div>
       </div>
@@ -45,8 +47,11 @@
     <script src="components/angular-cookies/angular-cookies.js"></script>
     <script src="components/angular-sanitize/angular-sanitize.js"></script>
     <script src="components/socket.io/dist/socket.io.js"></script>
-    <script src="components/angular-bootstrap/src/popover/popover.js"></script>
+    <script src="components/angular-bootstrap/ui-bootstrap-tpls.js"></script>
     <script src="components/bootstrap-js/bootstrap.js"></script>
+    <script src="components/spin.js/spin.js"></script>
+    <script src="components/angular-http-auth/src/angular-http-auth.js"></script>
+    <script src="components/base64/base64.js"></script>
 
     <!-- build:js scripts/scripts.js -->
     <script src="scripts/app.js"></script>
@@ -55,6 +60,11 @@
     <script src="scripts/services/socket.js"></script>
     <script src="scripts/controllers/bandwidth.js"></script>
     <script src="scripts/filters/dataspeed.js"></script>
+    <script src="scripts/directives/spinner.js"></script>
+    <script src="scripts/directives/hide.js"></script>
+    <script src="scripts/controllers/addgroup.js"></script>
+    <script src="scripts/controllers/login.js"></script>
+    <script src="scripts/services/base64.js"></script>
     <!-- endbuild -->
 
     <!-- Google Analytics: change UA-XXXXX-X to be your site's ID. -->

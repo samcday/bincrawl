@@ -10,9 +10,12 @@ import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Counter;
 import com.yammer.metrics.core.Timer;
 import com.yammer.metrics.core.TimerContext;
+import org.joda.time.Interval;
+import org.joda.time.MutableDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
@@ -48,6 +51,8 @@ public class Crawler {
             Result result = new Result();
 
             OverviewList overviewList = nntpClient.overview(from, to);
+            MutableDateTime earliest = new MutableDateTime(Long.MAX_VALUE), latest = new MutableDateTime(0);
+
             for(Overview overview : overviewList) {
                 LOG.trace("Processing group {} article {}", group, overview.getArticle());
 
@@ -55,6 +60,17 @@ public class Crawler {
                 try {
                     if(!this.processItem(processor, group, overview)) {
                         result.ignored++;
+                    }
+                    Date date = overview.getDate();
+                    if(date != null) {
+                        long dateInstant = date.getTime();
+                        if(earliest.isAfter(dateInstant)) {
+                            earliest.setMillis(dateInstant);
+                        }
+                        if(latest.isBefore(dateInstant)) {
+                            latest.setMillis(dateInstant);
+                        }
+
                     }
                     result.processed++;
                     crawledArticleCounter.inc();
@@ -65,6 +81,7 @@ public class Crawler {
             }
 
             result.missingArticles = overviewList.getMissingArticles();
+            result.dateRange = new Interval(earliest, latest);
             return result;
         }
         finally {
@@ -131,5 +148,10 @@ public class Crawler {
          * Number of articles ignored.
          */
         public int ignored;
+
+        /**
+         * Lowest and highest dates that were crawled.
+         */
+        public Interval dateRange;
     }
 }

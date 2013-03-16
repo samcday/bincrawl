@@ -2,6 +2,8 @@ package au.com.samcday.bincrawl.pool;
 
 import au.com.samcday.bincrawl.redis.BetterJedisCommands;
 import com.google.common.base.Optional;
+import com.google.common.primitives.Ints;
+import com.google.common.primitives.Longs;
 import redis.clients.jedis.*;
 
 import java.util.Collection;
@@ -26,7 +28,13 @@ public class PooledJedis implements JedisCommands, BinaryJedisCommands, BetterJe
     @Override
     public Optional<Long> hgetlong(String key, String field) {
         String val = this.hget(key, field);
-        return Optional.fromNullable(val != null ? Long.parseLong(val) : null);
+        return Optional.fromNullable(val != null ? Longs.tryParse(val) : null);
+    }
+
+    @Override
+    public Optional<Integer> hgetint(String key, String field) {
+        String val = this.hget(key, field);
+        return Optional.fromNullable(val != null ? Ints.tryParse(val) : null);
     }
 
     @Override
@@ -923,5 +931,9 @@ public class PooledJedis implements JedisCommands, BinaryJedisCommands, BetterJe
 
     public Long del(String... keys) {
         return decorated.del(keys);
+    }
+
+    public Long publish(String channel, String message) {
+        return decorated.publish(channel, message);
     }
 }

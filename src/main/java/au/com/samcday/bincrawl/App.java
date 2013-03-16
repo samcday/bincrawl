@@ -1,7 +1,5 @@
 package au.com.samcday.bincrawl;
 
-import au.com.samcday.bincrawl.services.BincrawlServiceManager;
-import com.google.common.util.concurrent.ServiceManager;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.yammer.metrics.reporting.ConsoleReporter;
@@ -27,9 +25,15 @@ public class App {
         /*CrawlService svc = injector.getInstance(CrawlService.class);
         System.out.println(svc.startAndWait());*/
 
-        ServiceManager sm = injector.getInstance(BincrawlServiceManager.class).get();
-        sm.startAsync();
-        sm.awaitHealthy();
+//        ServiceManager sm = injector.getInstance(BincrawlServiceManager.class).get();
+//        sm.startAsync();
+//        sm.awaitHealthy();
+
+        BinaryPartProcessor partProcessor = injector.getInstance(BinaryPartProcessor.class);
+
+        Crawler crawler = injector.getInstance(Crawler.class);
+        Crawler.Result res = crawler.crawl(partProcessor, "alt.binaries.hdtv", 2972783365l, 2972784237l);
+        System.out.println(res.dateRange);
 
         if(1==1) return;
 
@@ -44,7 +48,6 @@ public class App {
         BinaryProcessor processor = injector.getInstance(BinaryProcessor.class);
 
 //        Crawler crawler = injector.getInstance(Crawler.class);
-//        BinaryPartProcessor partProcessor = injector.getInstance(BinaryPartProcessor.class);
 ////        Crawler.Result result = crawler.crawl(partProcessor, "alt.binaries.teevee", 477372648, 477572648);
 //        Crawler.Result result = crawler.crawl(partProcessor, "alt.binaries.teevee", 477522648, 477572648);
 //        LOG.info("Crawled {} articles with {} ignored and {} missing.", result.processed, result.ignored, result.missingArticles.size());

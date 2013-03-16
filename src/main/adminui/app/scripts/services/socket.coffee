@@ -3,15 +3,17 @@
 angular.module('adminuiApp').factory 'socket', ($rootScope) ->
 	socket = io.connect "http://localhost:1339"
 
-	socket.on "connect", ->
-		console.log arguments
-
 	{
 		on: (eventName, callback) ->
-			socket.on eventName, ->
+			handler = ->
 				args = arguments
 				$rootScope.$apply ->
 					callback.apply socket, args
+			socket.on eventName, handler
+			return {
+				off: ->
+					socket.removeListener eventName, handler
+			}
 		emit: (eventName, data, callback) ->
 			socket.emit eventName, data, ->
 				args = arguments

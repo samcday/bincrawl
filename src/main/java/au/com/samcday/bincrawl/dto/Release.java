@@ -3,6 +3,7 @@ package au.com.samcday.bincrawl.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import org.joda.time.DateTime;
 
 import java.util.List;
 
@@ -16,6 +17,7 @@ public class Release {
     @org.codehaus.jackson.annotate.JsonProperty("_rev")
     private String rev;
 
+    private DateTime date;
     private String name;
     private int count;
     private List<ReleaseBinary> binaries;
@@ -46,6 +48,14 @@ public class Release {
 
     public void setCount(int count) {
         this.count = count;
+    }
+
+    public DateTime getDate() {
+        return date;
+    }
+
+    public void setDate(DateTime date) {
+        this.date = date;
     }
 
     public List<ReleaseBinary> getBinaries() {

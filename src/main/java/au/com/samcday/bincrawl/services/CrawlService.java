@@ -4,6 +4,7 @@ import au.com.samcday.bincrawl.Group;
 import au.com.samcday.bincrawl.RedisKeys;
 import au.com.samcday.bincrawl.pool.BetterJedisPool;
 import au.com.samcday.bincrawl.pool.PooledJedis;
+import au.com.samcday.bincrawl.tasks.ArticleBackfillTask;
 import au.com.samcday.bincrawl.tasks.ArticleUpdateTask;
 import au.com.samcday.bincrawl.tasks.GroupInfoTask;
 import au.com.samcday.bincrawl.util.AutoLockable;
@@ -19,6 +20,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -39,6 +42,7 @@ public class CrawlService extends AbstractExecutionThreadService {
     private final Condition workAvailable = workLock.newCondition();
     private BetterJedisPool redisPool;
     private Provider<ArticleUpdateTask> updateTaskProvider;
+    private Provider<ArticleBackfillTask> backfillTaskProvider;
     private Provider<GroupInfoTask> groupInfoTaskProvider;
 
     @Inject
@@ -54,7 +58,7 @@ public class CrawlService extends AbstractExecutionThreadService {
         this.updateGroups = new ConcurrentLinkedQueue<>();
         this.backfillGroups = new ConcurrentLinkedQueue<>();
         this.groups = new HashMap<>();
-        this.pool = new BlockingExecutorService(20);
+        this.pool = new BlockingExecutorService(20, new CrawlServiceThreadFactory());
         this.listenablePool = MoreExecutors.listeningDecorator(this.pool);
     }
 
@@ -148,9 +152,12 @@ public class CrawlService extends AbstractExecutionThreadService {
         try(AutoLockable ignored = AutoLockable.lock(this.workLock); PooledJedis redisClient = this.redisPool.get()) {
             assert !this.groups.containsKey(groupName);
             Future<Group> future = this.pool.submit(this.groupInfoTaskProvider.get().configure(groupName));
+            this.workAvailable.signal();
             Group group = Futures.getUnchecked(future);
             this.groups.put(groupName, group);
             redisClient.hsetnx(RedisKeys.group(groupName), RedisKeys.groupEnd, Long.toString(group.high));
+            redisClient.hsetnx(RedisKeys.group(groupName), RedisKeys.groupStart, Long.toString(group.high));
+            redisClient.publish("groupupdates", groupName);
 
             boolean backfill = redisClient.hget(RedisKeys.group(groupName), RedisKeys.groupMaxAge) != null;
             if(backfill) this.backfillGroups.add(groupName);
@@ -184,4 +191,48 @@ public class CrawlService extends AbstractExecutionThreadService {
         }
     }
 
+    private class BackfillTaskWrapper implements Runnable {
+        private ArticleBackfillTask task;
+        private String group;
+
+        public BackfillTaskWrapper(String group) {
+            this.group = group;
+            this.task = backfillTaskProvider.get();
+            this.task.configure(group, groups.get(group));
+        }
+
+        @Override
+        public void run() {
+            try {
+                if(this.task.call()) {
+                    try(AutoLockable ignored = AutoLockable.lock(workLock)) {
+                        backfillGroups.offer(this.group);
+                        workAvailable.signal();
+                    }
+                }
+            }
+            catch(Exception e) {
+                LOG.error("Unhandled Exception during update task.", e);
+            }
+        }
+    }
+
+    private static final class CrawlServiceThreadFactory implements ThreadFactory {
+        private ThreadGroup group;
+        private AtomicInteger threadNumber = new AtomicInteger(0);
+
+        private CrawlServiceThreadFactory() {
+            this.group = Thread.currentThread().getThreadGroup();
+        }
+
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(this.group, r, "CrawlService Worker #" + threadNumber.incrementAndGet(), 0);
+            if (t.isDaemon())
+                t.setDaemon(false);
+            if (t.getPriority() != Thread.NORM_PRIORITY)
+                t.setPriority(Thread.NORM_PRIORITY);
+            return t;
+        }
+    }
 }

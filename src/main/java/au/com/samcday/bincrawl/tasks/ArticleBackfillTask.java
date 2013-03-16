@@ -2,12 +2,18 @@ package au.com.samcday.bincrawl.tasks;
 
 import au.com.samcday.bincrawl.Crawler;
 import au.com.samcday.bincrawl.RedisBinaryPartProcessor;
+import au.com.samcday.bincrawl.RedisKeys;
 import au.com.samcday.bincrawl.pool.BetterJedisPool;
 import au.com.samcday.bincrawl.pool.NntpClientPool;
+import au.com.samcday.bincrawl.pool.PooledJedis;
+import au.com.samcday.bincrawl.pool.PooledNntpClient;
 import au.com.samcday.jnntp.GroupInfo;
 import com.google.inject.Inject;
+import org.joda.time.DateTime;
+import org.joda.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import redis.clients.jedis.Pipeline;
 
 import java.util.concurrent.Callable;
 
@@ -41,33 +47,44 @@ public class ArticleBackfillTask implements Callable<Boolean> {
     }
 
     @Override
-    public Boolean call() throws Exception {/*
+    public Boolean call() throws Exception {
         try (PooledJedis redisClient = this.redisPool.get(); PooledNntpClient nntpClient = this.nntpClientPool.borrow()) {
-            long current = redisClient.hgetlong(RedisKeys.group(this.group), RedisKeys.groupFirst).or(this.groupInfo.high);
-            long start;
-
-            if(current + 1 < this.groupInfo.high) {
-                long start = current + 1;
-                end = Math.min(start + this.numPosts, this.groupInfo.high);
-
-                Crawler.Result result = this.crawler.crawl(this.partProcessor, this.group, current, end);
-
-                // Push any missing articles into missing list.
-                Pipeline p = redisClient.pipelined();
-                for(Long missing : result.missingArticles) {
-                    p.lpush(RedisKeys.missing(this.group), Long.toString(missing));
+            int maxDays = redisClient.hgetint(RedisKeys.group(this.group), RedisKeys.groupMaxAge).or(-1);
+            if(maxDays < 0) {
+                return false;
+            }
+            Long currentDateMillis = redisClient.hgetlong(RedisKeys.group(this.group), RedisKeys.groupStartDate).orNull();
+            if(currentDateMillis != null) {
+                if(new Duration(new DateTime(currentDateMillis), new DateTime()).getStandardDays() > maxDays) {
+                    return false;
                 }
-                p.sync();
-            }
-            else {
-                end = current;
-                LOG.info("Nothing to crawl for group {}", this.group);
             }
 
-            redisClient.hset(RedisKeys.group(this.group), RedisKeys.groupEnd, end);
+            long current = redisClient.hgetlong(RedisKeys.group(this.group), RedisKeys.groupStart).get();
 
-            return current < end;
-        */
-    return false;
+            if(current <= this.groupInfo.low) {
+                return false;
+            }
+
+            redisClient.publish("groupactivity", this.group + ":b");
+
+            long start = Math.max(current - this.numPosts, this.groupInfo.low);
+
+            Crawler.Result result = this.crawler.crawl(this.partProcessor, this.group, start, current);
+
+            // Push any missing articles into missing list.
+            Pipeline p = redisClient.pipelined();
+            for(Long missing : result.missingArticles) {
+                p.lpush(RedisKeys.missing(this.group), Long.toString(missing));
+            }
+            p.sync();
+
+            redisClient.hset(RedisKeys.group(this.group), RedisKeys.groupStartDate, result.dateRange.getStart().getMillis());
+            redisClient.publish("groupactivity", this.group + ":!b");
+            redisClient.hset(RedisKeys.group(this.group), RedisKeys.groupStart, start);
+            redisClient.publish("groupupdates", this.group);
+
+            return start > this.groupInfo.low;
+        }
     }
 }

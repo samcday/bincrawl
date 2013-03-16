@@ -28,7 +28,9 @@ public class RedisKeys {
         return "group:" + group;
     }
     public static final String groupEnd = "end";
-    public static final String groupFirst = "first";
+    public static final String groupEndDate = "endDate";
+    public static final String groupStart = "start";
+    public static final String groupStartDate = "startDate";
     public static final String groupMaxAge = "maxAge";
 
     public static final String missing(String group) {

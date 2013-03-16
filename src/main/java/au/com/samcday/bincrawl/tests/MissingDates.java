@@ -25,7 +25,10 @@ import java.util.concurrent.atomic.AtomicReference;
 public class MissingDates {
     public static final void main(String... args) throws Exception {
         Injector injector = Guice.createInjector(new AppModule());
+        new MissingDates().go(injector);
+    }
 
+    public void go(Injector injector) throws Exception {
         final NntpClientPool pool = injector.getInstance(NntpClientPool.class);
 
         final int numWorkers = 4;
