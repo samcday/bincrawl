@@ -4,9 +4,7 @@ import au.com.samcday.bincrawl.Crawler;
 import au.com.samcday.bincrawl.RedisBinaryPartProcessor;
 import au.com.samcday.bincrawl.RedisKeys;
 import au.com.samcday.bincrawl.pool.BetterJedisPool;
-import au.com.samcday.bincrawl.pool.NntpClientPool;
 import au.com.samcday.bincrawl.pool.PooledJedis;
-import au.com.samcday.bincrawl.pool.PooledNntpClient;
 import au.com.samcday.jnntp.GroupInfo;
 import com.google.inject.Inject;
 import org.joda.time.DateTime;
@@ -24,7 +22,6 @@ public class ArticleBackfillTask implements Callable<Boolean> {
     private static final Logger LOG = LoggerFactory.getLogger(ArticleBackfillTask.class);
 
     private BetterJedisPool redisPool;
-    private NntpClientPool nntpClientPool;
     private Crawler crawler;
     private RedisBinaryPartProcessor partProcessor;
     private final int numPosts = 20000;         // TODO: make this configurable
@@ -33,10 +30,9 @@ public class ArticleBackfillTask implements Callable<Boolean> {
 //    private MinMaxPriorityQueue<Date> latestDates = new MinMaxPriorityQueue.Builder().maximumSize(10).create();
 
     @Inject
-    public ArticleBackfillTask(BetterJedisPool redisPool, NntpClientPool nntpClientPool, Crawler crawler,
+    public ArticleBackfillTask(BetterJedisPool redisPool, Crawler crawler,
                                RedisBinaryPartProcessor partProcessor) {
         this.redisPool = redisPool;
-        this.nntpClientPool = nntpClientPool;
         this.crawler = crawler;
         this.partProcessor = partProcessor;
     }
@@ -48,7 +44,7 @@ public class ArticleBackfillTask implements Callable<Boolean> {
 
     @Override
     public Boolean call() throws Exception {
-        try (PooledJedis redisClient = this.redisPool.get(); PooledNntpClient nntpClient = this.nntpClientPool.borrow()) {
+        try (PooledJedis redisClient = this.redisPool.get()) {
             int maxDays = redisClient.hgetint(RedisKeys.group(this.group), RedisKeys.groupMaxAge).or(-1);
             if(maxDays < 0) {
                 return false;
@@ -80,9 +76,9 @@ public class ArticleBackfillTask implements Callable<Boolean> {
             p.sync();
 
             redisClient.hset(RedisKeys.group(this.group), RedisKeys.groupStartDate, result.dateRange.getStart().getMillis());
-            redisClient.publish("groupactivity", this.group + ":!b");
             redisClient.hset(RedisKeys.group(this.group), RedisKeys.groupStart, start);
             redisClient.publish("groupupdates", this.group);
+            redisClient.publish("groupactivity", this.group + ":!b");
 
             return start > this.groupInfo.low;
         }

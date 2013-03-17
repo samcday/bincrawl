@@ -47,9 +47,10 @@ public class CrawlService extends AbstractExecutionThreadService {
 
     @Inject
     public CrawlService(BetterJedisPool redisPool, Provider<ArticleUpdateTask> updateTaskProvider,
-            Provider<GroupInfoTask> groupInfoTaskProvider) {
+                        Provider<ArticleBackfillTask> backfillTaskProvider, Provider<GroupInfoTask> groupInfoTaskProvider) {
         this.updateTaskProvider = updateTaskProvider;
         this.redisPool = redisPool;
+        this.backfillTaskProvider = backfillTaskProvider;
         this.groupInfoTaskProvider = groupInfoTaskProvider;
     }
 
@@ -94,8 +95,7 @@ public class CrawlService extends AbstractExecutionThreadService {
 
             group = this.backfillGroups.poll();
             if(group != null) {
-                // Create job to crawl some backfill posts for this group.
-                return null;
+                return new BackfillTaskWrapper(group);
             }
 
             // No work. Let's wait around until something happens. This might be either:
