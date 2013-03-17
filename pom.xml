@@ -32,6 +32,11 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-redis</artifactId>
+            <version>1.0.3.RELEASE</version>
+        </dependency>
+        <dependency>
             <groupId>com.yammer.dropwizard</groupId>
             <artifactId>dropwizard-core</artifactId>
             <version>0.6.1</version>

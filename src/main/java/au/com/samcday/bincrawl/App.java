@@ -1,10 +1,12 @@
 package au.com.samcday.bincrawl;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.yammer.metrics.reporting.ConsoleReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 
@@ -15,6 +17,14 @@ public class App {
 
     public static final void main(String... args) throws Exception {
         Injector injector = Guice.createInjector(new AppModule());
+
+        RedisTemplate<String, Integer> redisTemplate = injector.getInstance(RedisTemplate.class);
+
+        redisTemplate.<String, Integer>boundHashOps("foobar").putAll(ImmutableMap.of("test", 1, "awesome", 2));
+
+
+
+        if(1==1) return;
 
         /*NzbGenerator generator = injector.getInstance(NzbGenerator.class);
 

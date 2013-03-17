@@ -15,6 +15,9 @@ import org.ektorp.http.HttpClient;
 import org.ektorp.http.StdHttpClient;
 import org.ektorp.impl.StdCouchDbConnector;
 import org.ektorp.impl.StdCouchDbInstance;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
 import redis.clients.jedis.JedisPoolConfig;
 
 import java.net.MalformedURLException;
@@ -69,5 +72,21 @@ public class AppModule implements Module {
     BetterJedisPool provideJedisPool(RedisConfiguration config) {
         BetterJedisPool pool = new BetterJedisPool(new JedisPoolConfig(), config.getHost());
         return pool;
+    }
+
+    @Provides
+    RedisConnectionFactory provideRedisConnectionFactory(RedisConfiguration config) {
+        JedisConnectionFactory factory = new JedisConnectionFactory();
+//        factory.setHostName(config.getHost());
+        factory.afterPropertiesSet();
+        return factory;
+    }
+
+    @Provides
+    RedisTemplate provideRedisTemplate(RedisConnectionFactory factory) {
+        RedisTemplate redisTemplate = new RedisTemplate();
+        redisTemplate.setConnectionFactory(factory);
+        redisTemplate.afterPropertiesSet();
+        return redisTemplate;
     }
 }
