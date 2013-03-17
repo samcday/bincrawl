@@ -936,4 +936,12 @@ public class PooledJedis implements JedisCommands, BinaryJedisCommands, BetterJe
     public Long publish(String channel, String message) {
         return decorated.publish(channel, message);
     }
+
+    public String watch(final String... keys) {
+        return decorated.watch(keys);
+    }
+
+    public Transaction multi() {
+        return decorated.multi();
+    }
 }

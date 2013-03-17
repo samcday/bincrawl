@@ -1,7 +1,8 @@
 package au.com.samcday.bincrawl;
 
+import au.com.samcday.bincrawl.data.BinaryDao;
 import au.com.samcday.bincrawl.pool.NntpClientPool;
-import au.com.samcday.jnntp.NntpClient;
+import au.com.samcday.bincrawl.pool.PooledNntpClient;
 import au.com.samcday.jnntp.Overview;
 import au.com.samcday.jnntp.OverviewList;
 import com.google.inject.Inject;
@@ -32,19 +33,18 @@ public class Crawler {
     private static final Pattern PART_REGEX = Pattern.compile("\\((\\d+)[\\\\/](\\d+)\\)");
 
     private NntpClientPool nntpClientPool;
+    private BinaryDao binaryDao;
 
     @Inject
-    public Crawler(NntpClientPool nntpClientPool) {
+    public Crawler(NntpClientPool nntpClientPool, BinaryDao binaryDao) {
         this.nntpClientPool = nntpClientPool;
+        this.binaryDao = binaryDao;
     }
 
-    public Result crawl(BinaryPartProcessor processor, String group, long from, long to) throws Exception {
-        // TODO: checked exceptions from nntpclientpool lease...
-        NntpClient nntpClient = this.nntpClientPool.borrowObject();
+    public Result crawl(String group, long from, long to) throws Exception {
+        try(PooledNntpClient nntpClient = this.nntpClientPool.borrow()) {
+            Counter crawledArticleCounter = Metrics.newCounter(Crawler.class, "crawled", group);
 
-        Counter crawledArticleCounter = Metrics.newCounter(Crawler.class, "crawled", group);
-
-        try {
             LOG.info("Starting crawl of group {} of articles {} - {}", group, from, to);
             nntpClient.group(group);
 
@@ -58,7 +58,7 @@ public class Crawler {
 
                 TimerContext ctx = this.crawlTimer.time();
                 try {
-                    if(!this.processItem(processor, group, overview)) {
+                    if(!this.processItem(group, overview)) {
                         result.ignored++;
                     }
                     Date date = overview.getDate();
@@ -84,12 +84,9 @@ public class Crawler {
             result.dateRange = new Interval(earliest, latest);
             return result;
         }
-        finally {
-            this.nntpClientPool.returnObject(nntpClient);
-        }
     }
 
-    private boolean processItem(BinaryPartProcessor processor, String group, Overview overview) {
+    private boolean processItem(String group, Overview overview) {
         // First step is to determine what part number this post is.
 
         // We phase thru the matches first, and save off the last matching position we found. If we don't find a match,
@@ -127,8 +124,11 @@ public class Crawler {
         String name = buf.toString();
         LOG.trace("Found binary part {} of {} for binary with subject {}", partNum, totalParts, name);
 
-        processor.processPart(group, name, overview.getDate(), overview.getBytes(), overview.getMessageId(), partNum,
-            totalParts);
+        String binaryHash = this.binaryDao.createBinary(group, name, totalParts, overview);
+        this.binaryDao.addBinaryPart(binaryHash, overview);
+
+//        processor.processPart(group, name, overview.getDate(), overview.getBytes(), overview.getMessageId(), partNum,
+//            totalParts);
 
         return true;
     }
