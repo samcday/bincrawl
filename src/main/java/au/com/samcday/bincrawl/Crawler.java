@@ -1,6 +1,6 @@
 package au.com.samcday.bincrawl;
 
-import au.com.samcday.bincrawl.data.BinaryDao;
+import au.com.samcday.bincrawl.dao.BinaryDao;
 import au.com.samcday.bincrawl.pool.NntpClientPool;
 import au.com.samcday.bincrawl.pool.PooledNntpClient;
 import au.com.samcday.jnntp.Overview;
@@ -125,7 +125,7 @@ public class Crawler {
         LOG.trace("Found binary part {} of {} for binary with subject {}", partNum, totalParts, name);
 
         String binaryHash = this.binaryDao.createBinary(group, name, totalParts, overview);
-        this.binaryDao.addBinaryPart(binaryHash, overview);
+        this.binaryDao.addBinaryPart(binaryHash, partNum, overview);
 
 //        processor.processPart(group, name, overview.getDate(), overview.getBytes(), overview.getMessageId(), partNum,
 //            totalParts);

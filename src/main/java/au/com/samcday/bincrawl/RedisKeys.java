@@ -36,4 +36,8 @@ public class RedisKeys {
     public static final String missing(String group) {
         return "missing:" + group;
     }
+
+    public static String binaryGroups(String binaryHash) {
+        return "b:" + binaryHash + ":groups";
+    }
 }

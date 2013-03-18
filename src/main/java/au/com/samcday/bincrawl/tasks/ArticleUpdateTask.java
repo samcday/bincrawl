@@ -54,7 +54,7 @@ public class ArticleUpdateTask implements Callable<Boolean> {
                 long start = current + 1;
                 end = Math.min(start + this.numPosts, this.groupInfo.high);
 
-                Crawler.Result result = this.crawler.crawl(this.partProcessor, this.group, current, end);
+                Crawler.Result result = this.crawler.crawl(this.group, current, end);
 
                 // Push any missing articles into missing list.
                 Pipeline p = redisClient.pipelined();

@@ -66,7 +66,7 @@ public class ArticleBackfillTask implements Callable<Boolean> {
 
             long start = Math.max(current - this.numPosts, this.groupInfo.low);
 
-            Crawler.Result result = this.crawler.crawl(this.partProcessor, this.group, start, current);
+            Crawler.Result result = this.crawler.crawl(this.group, start, current);
 
             // Push any missing articles into missing list.
             Pipeline p = redisClient.pipelined();
