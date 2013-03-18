@@ -1,5 +1,7 @@
 package au.com.samcday.bincrawl;
 
+import au.com.samcday.bincrawl.dao.BinaryDao;
+import au.com.samcday.bincrawl.dao.entities.Binary;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.yammer.metrics.reporting.ConsoleReporter;
@@ -16,6 +18,10 @@ public class App {
     public static final void main(String... args) throws Exception {
         Injector injector = Guice.createInjector(new AppModule());
 
+        BinaryDao dao = injector.getInstance(BinaryDao.class);
+        Binary bin = dao.getBinary("0a88883d");
+
+        if(1==1) return;
 
         /*NzbGenerator generator = injector.getInstance(NzbGenerator.class);
 
@@ -33,7 +39,7 @@ public class App {
         BinaryPartProcessor partProcessor = injector.getInstance(BinaryPartProcessor.class);
 
         Crawler crawler = injector.getInstance(Crawler.class);
-        Crawler.Result res = crawler.crawl(partProcessor, "alt.binaries.hdtv", 2972783365l, 2972784237l);
+        Crawler.Result res = crawler.crawl("alt.binaries.hdtv", 2972783365l, 2972784237l);
         System.out.println(res.dateRange);
 
         if(1==1) return;

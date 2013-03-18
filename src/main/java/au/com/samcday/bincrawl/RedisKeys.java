@@ -8,7 +8,7 @@ public class RedisKeys {
         return "b:" + hash;
     }
     public static final String binaryPart(int num) {
-        return "p: " + num;
+        return "p:" + num;
     }
     public static final String binaryGroup = "g";
     public static final String binarySubject = "s";

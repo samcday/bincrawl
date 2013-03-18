@@ -1,5 +1,8 @@
 package au.com.samcday.bincrawl;
 
+import au.com.samcday.bincrawl.dao.BinaryDao;
+import au.com.samcday.bincrawl.dao.ReleaseDao;
+import au.com.samcday.bincrawl.dao.entities.Binary;
 import au.com.samcday.bincrawl.dto.Release;
 import au.com.samcday.bincrawl.pool.BetterJedisPool;
 import au.com.samcday.bincrawl.pool.PooledJedis;
@@ -13,14 +16,12 @@ import com.google.inject.Singleton;
 import com.yammer.metrics.Metrics;
 import com.yammer.metrics.core.Timer;
 import org.ektorp.CouchDbConnector;
-import org.ektorp.UpdateConflictException;
 import org.ektorp.http.RestTemplate;
 import org.ektorp.http.URI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -41,29 +42,35 @@ public class BinaryProcessor {
     private BetterJedisPool redisPool;
     private BinaryClassifier classifier;
     private CouchDbConnector couchDb;
+    private BinaryDao binaryDao;
+    private ReleaseDao releaseDao;
 
     @Inject
-    public BinaryProcessor(BetterJedisPool redisPool, BinaryClassifier classifier, CouchDbConnector couchDb) {
+    public BinaryProcessor(BetterJedisPool redisPool, BinaryClassifier classifier, CouchDbConnector couchDb, BinaryDao binaryDao, ReleaseDao releaseDao) {
         this.redisPool = redisPool;
         this.classifier = classifier;
         this.couchDb = couchDb;
+        this.binaryDao = binaryDao;
+        this.releaseDao = releaseDao;
     }
 
     public boolean processBinary(String binaryHash) {
-        try(PooledJedis redisClient = this.redisPool.get(); CloseableTimer ignored = startTimer(this.processTimer)) {
-            String key = RedisKeys.binary(binaryHash);
-            List<String> fields = redisClient.hmget (key, RedisKeys.binaryGroup, RedisKeys.binarySubject);
-            String subject = fields.get(1);
-            BinaryClassifier.Classification classification = this.classifier.classify(fields.get(0), subject);
+        try(CloseableTimer ignored = startTimer(this.processTimer)) {
+            Binary binary = this.binaryDao.getBinary(binaryHash);
+            BinaryClassifier.Classification classification = null;
+
+            for(String group : binary.getGroups()) {
+                classification = this.classifier.classify(group, binary.getSubject());
+                if(classification != null) break;
+            }
 
             if(classification != null) {
-                Release release = this.createRelease(classification);
-                redisClient.hsetnx(key, RedisKeys.binaryRelease, release.getId());
-                redisClient.hsetnx(key, RedisKeys.binaryReleaseNum, Integer.toString(classification.partNum));
+                Release release = this.releaseDao.createRelease(classification);
+                this.binaryDao.setReleaseInfo(binaryHash, release.getId(), classification.partNum);
                 return true;
             }
             else {
-                LOG.info("Couldn't classify binary with subject", subject);
+                LOG.info("Couldn't classify binary with subject", binary.getSubject());
                 return false;
             }
         }
@@ -111,29 +118,6 @@ public class BinaryProcessor {
         }
         catch(JsonProcessingException jpe) {
             throw new RuntimeException(jpe);
-        }
-    }
-
-    private Release createRelease(BinaryClassifier.Classification classification) {
-        while(true) {
-            Release release = this.couchDb.find(Release.class, Release.buildId(classification.name));
-            if(release == null) {
-                release = new Release();
-                release.setId(Release.buildId(classification.name));
-                release.setName(classification.name);
-                release.setCount(classification.totalParts);
-                try {
-                    this.couchDb.create(release);
-                }
-                catch(UpdateConflictException uce) {
-                    // Ignore, on next loop we'll correctly find the document.
-                }
-            }
-            else if(release.getCount() < classification.totalParts) {
-                release.setCount(classification.totalParts);
-                this.couchDb.update(release);
-            }
-            return release;
         }
     }
 }

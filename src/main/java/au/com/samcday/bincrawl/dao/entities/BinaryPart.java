@@ -5,6 +5,12 @@ public class BinaryPart {
     private String messageId;
     private long size;
 
+    public BinaryPart(int partNum, String messageId, long size) {
+        this.partNum = partNum;
+        this.messageId = messageId;
+        this.size = size;
+    }
+
     public int getPartNum() {
         return partNum;
     }

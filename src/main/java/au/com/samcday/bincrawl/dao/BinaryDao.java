@@ -22,6 +22,13 @@ public interface BinaryDao {
     public void deleteBinary(String binaryHash);
 
     /**
+     * Updates a binary with the release it belongs to.
+     * @param binaryHash
+     * @param releaseId
+     */
+    public void setReleaseInfo(String binaryHash, String releaseId, int num);
+
+    /**
      * Gets all data relating to a binary.
      * @param binaryHash
      */

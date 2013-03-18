@@ -3,9 +3,6 @@
 </div>
 
 <div class="modal-body">
-	<div class="alert alert-error">
-	  ..........
-	</div>
 	<form ng-submit="submit()">
 		<label>Group Name</label>
 		<input type="text" ng-model="group.name" required />
@@ -13,7 +10,7 @@
 		<input type="number" ng-model="group.maxAge" />
 
 		<label>&nbsp;</label>
-		<a class="btn" ng-click="cancel()">Cancel</a>
-		<button type="submit" class="btn btn-primary">Submit</button>
+		<a class="btn" ng-click="cancel()" ng-disabled="submitting">Cancel</a>
+		<button type="submit" class="btn btn-primary" ng-disabled="submitting">Submit</button>
 	</form>
 </div>
