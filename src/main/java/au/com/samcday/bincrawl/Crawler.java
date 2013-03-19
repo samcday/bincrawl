@@ -34,11 +34,13 @@ public class Crawler {
 
     private NntpClientPool nntpClientPool;
     private BinaryDao binaryDao;
+    private BinaryClassifier binaryClassifier;
 
     @Inject
-    public Crawler(NntpClientPool nntpClientPool, BinaryDao binaryDao) {
+    public Crawler(NntpClientPool nntpClientPool, BinaryDao binaryDao, BinaryClassifier binaryClassifier) {
         this.nntpClientPool = nntpClientPool;
         this.binaryDao = binaryDao;
+        this.binaryClassifier = binaryClassifier;
     }
 
     public Result crawl(String group, long from, long to) throws Exception {

@@ -1,9 +1,7 @@
 package au.com.samcday.bincrawl.services;
 
 import au.com.samcday.bincrawl.BinaryProcessor;
-import au.com.samcday.bincrawl.RedisKeys;
-import au.com.samcday.bincrawl.pool.BetterJedisPool;
-import au.com.samcday.bincrawl.pool.PooledJedis;
+import au.com.samcday.bincrawl.dao.BinaryDao;
 import com.google.common.util.concurrent.AbstractExecutionThreadService;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -14,17 +12,22 @@ import org.slf4j.LoggerFactory;
 public class BinaryProcessService extends AbstractExecutionThreadService {
     private Logger LOG = LoggerFactory.getLogger(BinaryProcessService.class);
 
-    private BetterJedisPool redisPool;
+    private BinaryDao binaryDao;
     private BinaryProcessor binaryProcessor;
 
     @Inject
-    public BinaryProcessService(BetterJedisPool redisPool, BinaryProcessor binaryProcessor) {
-        this.redisPool = redisPool;
+    public BinaryProcessService(BinaryDao binaryDao, BinaryProcessor binaryProcessor) {
+        this.binaryDao = binaryDao;
         this.binaryProcessor = binaryProcessor;
     }
 
     @Override
     protected void run() throws Exception {
+        while(this.isRunning()) {
+            
+        }
+
+        /*
         try(PooledJedis redisClient = this.redisPool.get()) {
             while(this.isRunning()) {
                 String binaryHash = redisClient.brpopsingle(0, RedisKeys.binaryProcess);
@@ -35,6 +38,6 @@ public class BinaryProcessService extends AbstractExecutionThreadService {
                     redisClient.lpush(RedisKeys.binaryProcessFailed, binaryHash);
                 }
             }
-        }
+        }*/
     }
 }

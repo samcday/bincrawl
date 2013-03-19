@@ -10,6 +10,7 @@ import java.util.Set;
 public class Binary {
     private String binaryHash;
     private String releaseId;
+    private Integer releaseNum;
     private String subject;
     private int totalParts;
     private DateTime date;
@@ -70,5 +71,13 @@ public class Binary {
 
     public void setReleaseId(String releaseId) {
         this.releaseId = releaseId;
+    }
+
+    public Integer getReleaseNum() {
+        return releaseNum;
+    }
+
+    public void setReleaseNum(Integer releaseNum) {
+        this.releaseNum = releaseNum;
     }
 }

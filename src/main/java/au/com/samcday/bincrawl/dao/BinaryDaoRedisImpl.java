@@ -15,6 +15,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
+import com.google.common.primitives.Ints;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.joda.time.DateTime;
@@ -117,6 +118,8 @@ public class BinaryDaoRedisImpl implements BinaryDao {
 
             Binary binary = new Binary();
             binary.setBinaryHash(binaryHash);
+            binary.setReleaseId(data.get(RedisKeys.binaryRelease));
+            binary.setReleaseNum(Ints.tryParse(data.get(RedisKeys.binaryReleaseNum)));
             binary.setSubject(data.get(RedisKeys.binarySubject));
             binary.setDate(new DateTime(Long.parseLong(data.get(RedisKeys.binaryDate))));
             binary.setTotalParts(Integer.parseInt(data.get(RedisKeys.binaryTotalParts)));
@@ -125,7 +128,7 @@ public class BinaryDaoRedisImpl implements BinaryDao {
             List<BinaryPart> parts = new ArrayList<>();
             for(Map.Entry<String, String> entry : data.entrySet()) {
                 if(entry.getKey().startsWith("p:")) {
-                    int partNum = Integer.parseInt(entry.getKey().substring(3));
+                    int partNum = Integer.parseInt(entry.getKey().substring(2));
                     ArrayNode partData = this.objectMapper.readValue(entry.getValue(), ArrayNode.class);
                     parts.add(new BinaryPart(partNum, partData.get(0).textValue(), partData.get(1).intValue()));
                 }
