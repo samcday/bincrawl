@@ -15,9 +15,8 @@ public class BincrawlServiceManager implements Provider<ServiceManager> {
     }
 
     @Inject
-    public BincrawlServiceManager(CrawlService crawlService, BinaryProcessService binaryProcessService,
-            CompletedBinaryService completedBinaryService) {
+    public BincrawlServiceManager(CrawlService crawlService, CompletedBinaryService completedBinaryService) {
         this.serviceManager = new ServiceManager(ImmutableList.<Service>of(
-            crawlService, binaryProcessService, completedBinaryService));
+            crawlService, completedBinaryService));
     }
 }

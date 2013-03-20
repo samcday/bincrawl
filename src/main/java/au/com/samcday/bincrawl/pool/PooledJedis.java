@@ -944,4 +944,8 @@ public class PooledJedis implements JedisCommands, BinaryJedisCommands, BetterJe
     public Transaction multi() {
         return decorated.multi();
     }
+
+    public Set<String> keys(String pattern) {
+        return decorated.keys(pattern);
+    }
 }

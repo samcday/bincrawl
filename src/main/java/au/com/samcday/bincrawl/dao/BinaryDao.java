@@ -33,4 +33,13 @@ public interface BinaryDao {
      * @param binaryHash
      */
     public Binary getBinary(String binaryHash);
+
+    /**
+     * Blocks for a completed binary and executes the handler with binary data.
+     */
+    public void processCompletedBinary(CompletedBinaryHandler handler);
+
+    public static interface CompletedBinaryHandler {
+        public boolean handle(Binary completed) throws Exception;
+    }
 }

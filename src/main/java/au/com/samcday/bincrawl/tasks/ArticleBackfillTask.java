@@ -1,7 +1,6 @@
 package au.com.samcday.bincrawl.tasks;
 
 import au.com.samcday.bincrawl.Crawler;
-import au.com.samcday.bincrawl.RedisBinaryPartProcessor;
 import au.com.samcday.bincrawl.RedisKeys;
 import au.com.samcday.bincrawl.pool.BetterJedisPool;
 import au.com.samcday.bincrawl.pool.PooledJedis;
@@ -23,18 +22,15 @@ public class ArticleBackfillTask implements Callable<Boolean> {
 
     private BetterJedisPool redisPool;
     private Crawler crawler;
-    private RedisBinaryPartProcessor partProcessor;
     private final int numPosts = 20000;         // TODO: make this configurable
     private String group;
     private GroupInfo groupInfo;
 //    private MinMaxPriorityQueue<Date> latestDates = new MinMaxPriorityQueue.Builder().maximumSize(10).create();
 
     @Inject
-    public ArticleBackfillTask(BetterJedisPool redisPool, Crawler crawler,
-                               RedisBinaryPartProcessor partProcessor) {
+    public ArticleBackfillTask(BetterJedisPool redisPool, Crawler crawler) {
         this.redisPool = redisPool;
         this.crawler = crawler;
-        this.partProcessor = partProcessor;
     }
 
     public void configure(String group, GroupInfo groupInfo) {

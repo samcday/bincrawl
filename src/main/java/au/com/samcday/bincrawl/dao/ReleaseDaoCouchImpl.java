@@ -1,16 +1,15 @@
 package au.com.samcday.bincrawl.dao;
 
-import au.com.samcday.bincrawl.BinaryClassifier;
 import au.com.samcday.bincrawl.dao.entities.Binary;
 import au.com.samcday.bincrawl.dto.Release;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import org.ektorp.CouchDbConnector;
-import org.ektorp.UpdateConflictException;
 import org.ektorp.http.RestTemplate;
 import org.ektorp.http.URI;
-import java.util.Map;
+
+import java.util.List;
 
 public class ReleaseDaoCouchImpl implements ReleaseDao {
     private CouchDbConnector couchDb;
@@ -21,7 +20,7 @@ public class ReleaseDaoCouchImpl implements ReleaseDao {
         this.couchDb = couchDb;
         this.objectMapper = objectMapper;
     }
-
+/*
     @Override
     public Release createRelease(BinaryClassifier.Classification classification) {
         while(true) {
@@ -44,6 +43,11 @@ public class ReleaseDaoCouchImpl implements ReleaseDao {
             }
             return release;
         }
+    }*/
+
+    @Override
+    public Release createRelease(List<String> groups) {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override

@@ -1,17 +1,14 @@
 package au.com.samcday.bincrawl;
 
-import com.google.common.collect.Sets;
+import au.com.samcday.bincrawl.pool.BetterJedisPool;
+import au.com.samcday.bincrawl.pool.PooledJedis;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.yammer.metrics.reporting.ConsoleReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class App {
@@ -19,6 +16,36 @@ public class App {
 
     public static final void main(String... args) throws Exception {
         Injector injector = Guice.createInjector(new AppModule());
+
+        BetterJedisPool redisPool = injector.getInstance(BetterJedisPool.class);
+        BinaryClassifier classifier = injector.getInstance(BinaryClassifier.class);
+
+        try (PooledJedis redisClient = redisPool.get()) {
+            Set<String> keys = redisClient.keys("b:*");
+            for (String key : keys) {
+                if(key.endsWith(":groups")) continue;
+                String subj = redisClient.hget(key, RedisKeys.binarySubject);
+
+                Set<String> groups = redisClient.smembers(key + ":groups");
+
+                if(groups.size() > 1) {
+                    System.out.println(subj + ":");
+                    for (String group : groups) {
+                        BinaryClassifier.Classification classification = classifier.classify(group, subj);
+                        System.out.println(group + ": " + (classification != null ? classification.name : "NULL"));
+                    }
+                    System.out.println();
+                }
+
+            }
+        }
+
+        if(1==1) return;
+
+//        Crawler crawler = injector.getInstance(Crawler.class);
+//        crawler.crawl("alt.binaries.teevee", 485002735l - 500000, 485002735l);
+//
+//        if(1==1) return;
 
 //        NntpClientPool pool = injector.getInstance(NntpClientPool.class);
 //
@@ -64,32 +91,32 @@ public class App {
 //        writer.close();
 //        fout.close();
 
-        BinaryClassifier classifier = injector.getInstance(BinaryClassifier.class);
-        BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream("/tmp/blah")));
-        List<String> lines = new ArrayList<>();
-        String read;
-        while((read = r.readLine()) != null) {
-            lines.add(read);
-        }
-
-        System.out.printf("%d items. %d unique items.\n", lines.size(), Sets.newHashSet(lines).size());
-
-        ConsoleReporter.enable(1, TimeUnit.SECONDS);
-        int total = 0;
-        int matched = 0;
-        long start = System.currentTimeMillis();
-        for(int i = 0; i < 100; i++) {
-            for(String line : lines) {
-                if(classifier.classify("alt.binaries.hdtv", line) != null) matched++;
-                total++;
-            }
-        }
-
-        long took = System.currentTimeMillis() - start;
-        System.out.printf("Took %dms to process %d items. Matched %d. %f per item\n", took, total, matched, (double) took / (double) total);
-
-
-        if(1==1) return;
+//        BinaryClassifier classifier = injector.getInstance(BinaryClassifier.class);
+//        BufferedReader r = new BufferedReader(new InputStreamReader(new FileInputStream("/tmp/blah")));
+//        List<String> lines = new ArrayList<>();
+//        String read;
+//        while((read = r.readLine()) != null) {
+//            lines.add(read);
+//        }
+//
+//        System.out.printf("%d items. %d unique items.\n", lines.size(), Sets.newHashSet(lines).size());
+//
+//        ConsoleReporter.enable(1, TimeUnit.SECONDS);
+//        int total = 0;
+//        int matched = 0;
+//        long start = System.currentTimeMillis();
+//        for(int i = 0; i < 100; i++) {
+//            for(String line : lines) {
+//                if(classifier.classify("alt.binaries.hdtv", line) != null) matched++;
+//                total++;
+//            }
+//        }
+//
+//        long took = System.currentTimeMillis() - start;
+//        System.out.printf("Took %dms to process %d items. Matched %d. %f per item\n", took, total, matched, (double) took / (double) total);
+//
+//
+//        if(1==1) return;
 
 //        Crawler crawler = injector.getInstance(Crawler.class);
 //        Crawler.Result res = crawler.crawl("alt.binaries.hdtv", 2972783365l, 2972784237l);

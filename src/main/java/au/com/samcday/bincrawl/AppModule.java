@@ -27,7 +27,6 @@ import java.net.MalformedURLException;
 public class AppModule implements Module {
     @Override
     public void configure(Binder binder) {
-        binder.bind(BinaryPartProcessor.class).to(RedisBinaryPartProcessor.class);
         binder.bind(BinaryDao.class).to(BinaryDaoRedisImpl.class);
         binder.bind(RegexSource.class).to(StaticRegexSource.class);
         binder.bind(ReleaseDao.class).to(ReleaseDaoCouchImpl.class);

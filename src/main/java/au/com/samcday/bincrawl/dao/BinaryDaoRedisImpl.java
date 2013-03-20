@@ -10,7 +10,6 @@ import au.com.samcday.jnntp.Xref;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.google.common.base.Joiner;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.HashFunction;
@@ -32,7 +31,6 @@ import java.util.Map;
 public class BinaryDaoRedisImpl implements BinaryDao {
     private static final Logger LOG = LoggerFactory.getLogger(BinaryDaoRedisImpl.class);
     private static final HashFunction HASHER = Hashing.murmur3_32();
-    private static final Joiner PIPE_JOINER = Joiner.on("|");
 
     private BetterJedisPool redisPool;
     private ObjectMapper objectMapper;
@@ -149,6 +147,26 @@ public class BinaryDaoRedisImpl implements BinaryDao {
         try(PooledJedis redisClient = this.redisPool.get()) {
             redisClient.hsetnx(RedisKeys.binary(binaryHash), RedisKeys.binaryRelease, releaseId);
             redisClient.hsetnx(RedisKeys.binary(binaryHash), RedisKeys.binaryReleaseNum, Integer.toString(num));
+        }
+    }
+
+    @Override
+    public void processCompletedBinary(CompletedBinaryHandler handler) {
+        try(PooledJedis redisClient = this.redisPool.get()) {
+            String binaryHash = redisClient.brpopsingle(0, RedisKeys.binaryComplete);
+            LOG.info("Processing complete binary {}", binaryHash);
+
+            Binary completed = this.getBinary(binaryHash);
+
+            boolean success = false;
+            try {
+                success = handler.handle(completed);
+            }
+            catch(Exception e) {}
+            finally {
+                if(!success)
+                    redisClient.lpush(RedisKeys.binaryComplete, binaryHash);
+            }
         }
     }
 }

@@ -1,7 +1,6 @@
 package au.com.samcday.bincrawl.tasks;
 
 import au.com.samcday.bincrawl.Crawler;
-import au.com.samcday.bincrawl.RedisBinaryPartProcessor;
 import au.com.samcday.bincrawl.RedisKeys;
 import au.com.samcday.bincrawl.pool.BetterJedisPool;
 import au.com.samcday.bincrawl.pool.NntpClientPool;
@@ -24,18 +23,15 @@ public class ArticleUpdateTask implements Callable<Boolean> {
     private BetterJedisPool redisPool;
     private NntpClientPool nntpClientPool;
     private Crawler crawler;
-    private RedisBinaryPartProcessor partProcessor;
     private final int numPosts = 20000;         // TODO: make this configurable
     private String group;
     private GroupInfo groupInfo;
 
     @Inject
-    public ArticleUpdateTask(BetterJedisPool redisPool, NntpClientPool nntpClientPool, Crawler crawler,
-            RedisBinaryPartProcessor partProcessor) {
+    public ArticleUpdateTask(BetterJedisPool redisPool, NntpClientPool nntpClientPool, Crawler crawler) {
         this.redisPool = redisPool;
         this.nntpClientPool = nntpClientPool;
         this.crawler = crawler;
-        this.partProcessor = partProcessor;
     }
 
     public void configure(String group, GroupInfo groupInfo) {
