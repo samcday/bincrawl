@@ -4,6 +4,8 @@ import au.com.samcday.bincrawl.configuration.NntpClientConfiguration;
 import au.com.samcday.bincrawl.configuration.RedisConfiguration;
 import au.com.samcday.bincrawl.dao.BinaryDao;
 import au.com.samcday.bincrawl.dao.BinaryDaoRedisImpl;
+import au.com.samcday.bincrawl.dao.ReleaseDao;
+import au.com.samcday.bincrawl.dao.ReleaseDaoCouchImpl;
 import au.com.samcday.bincrawl.pool.BetterJedisPool;
 import au.com.samcday.bincrawl.regex.RegexSource;
 import au.com.samcday.bincrawl.regex.StaticRegexSource;
@@ -28,6 +30,7 @@ public class AppModule implements Module {
         binder.bind(BinaryPartProcessor.class).to(RedisBinaryPartProcessor.class);
         binder.bind(BinaryDao.class).to(BinaryDaoRedisImpl.class);
         binder.bind(RegexSource.class).to(StaticRegexSource.class);
+        binder.bind(ReleaseDao.class).to(ReleaseDaoCouchImpl.class);
     }
 
     // TODO: this should obviously be getting loaded from an external source.
@@ -47,7 +50,7 @@ public class AppModule implements Module {
         config.setPort(Integer.parseInt(System.getProperty("nntp.port")));
         config.setUsername(System.getProperty("nntp.user"));
         config.setPassword(System.getProperty("nntp.pass"));
-        config.setSsl(true);
+//        config.setSsl(true);
         config.setMaxConnections(20);
         return config;
     }

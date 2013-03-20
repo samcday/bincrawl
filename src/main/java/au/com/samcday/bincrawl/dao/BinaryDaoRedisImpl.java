@@ -121,6 +121,8 @@ public class BinaryDaoRedisImpl implements BinaryDao {
             binary.setReleaseId(data.get(RedisKeys.binaryRelease));
             binary.setReleaseNum(Ints.tryParse(data.get(RedisKeys.binaryReleaseNum)));
             binary.setSubject(data.get(RedisKeys.binarySubject));
+            binary.setReleaseId(data.get(RedisKeys.binaryRelease));
+            binary.setReleaseNum(Ints.tryParse(RedisKeys.binaryReleaseNum));
             binary.setDate(new DateTime(Long.parseLong(data.get(RedisKeys.binaryDate))));
             binary.setTotalParts(Integer.parseInt(data.get(RedisKeys.binaryTotalParts)));
             binary.setGroups(redisClient.smembers(RedisKeys.binaryGroups(binaryHash)));

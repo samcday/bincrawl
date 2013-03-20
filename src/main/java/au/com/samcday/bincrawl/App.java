@@ -18,29 +18,12 @@ public class App {
     public static final void main(String... args) throws Exception {
         Injector injector = Guice.createInjector(new AppModule());
 
-        BinaryDao dao = injector.getInstance(BinaryDao.class);
-        Binary bin = dao.getBinary("0a88883d");
+//        Crawler crawler = injector.getInstance(Crawler.class);
+//        Crawler.Result res = crawler.crawl("alt.binaries.hdtv", 2972783365l, 2972784237l);
+//        System.out.println(res.dateRange);
 
-        if(1==1) return;
-
-        /*NzbGenerator generator = injector.getInstance(NzbGenerator.class);
-
-        FileOutputStream fout = new FileOutputStream("/tmp/test.nzb");
-        fout.write(generator.build("09b160496d5e8d5dac1a53cc358bc84c9b252fbf"));
-        fout.close();*/
-
-        /*CrawlService svc = injector.getInstance(CrawlService.class);
-        System.out.println(svc.startAndWait());*/
-
-//        ServiceManager sm = injector.getInstance(BincrawlServiceManager.class).get();
-//        sm.startAsync();
-//        sm.awaitHealthy();
-
-        BinaryPartProcessor partProcessor = injector.getInstance(BinaryPartProcessor.class);
-
-        Crawler crawler = injector.getInstance(Crawler.class);
-        Crawler.Result res = crawler.crawl("alt.binaries.hdtv", 2972783365l, 2972784237l);
-        System.out.println(res.dateRange);
+        BinaryProcessor processor = injector.getInstance(BinaryProcessor.class);
+        System.out.println(processor.processBinary("ad17f16b"));
 
         if(1==1) return;
 
@@ -52,7 +35,7 @@ public class App {
         ConsoleReporter.enable(5, TimeUnit.SECONDS);
 
         Jedis redis = injector.getInstance(JedisPool.class).getResource();
-        BinaryProcessor processor = injector.getInstance(BinaryProcessor.class);
+        processor = injector.getInstance(BinaryProcessor.class);
 
 //        Crawler crawler = injector.getInstance(Crawler.class);
 ////        Crawler.Result result = crawler.crawl(partProcessor, "alt.binaries.teevee", 477372648, 477572648);
