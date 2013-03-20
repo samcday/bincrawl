@@ -3,7 +3,15 @@ package au.com.samcday.bincrawl;
 import au.com.samcday.bincrawl.regex.Regex;
 import au.com.samcday.bincrawl.regex.RegexSource;
 import au.com.samcday.bincrawl.util.CloseableTimer;
+import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.hash.BloomFilter;
+import com.google.common.hash.Funnel;
+import com.google.common.hash.PrimitiveSink;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.yammer.metrics.Metrics;
@@ -29,17 +37,48 @@ public class BinaryClassifier {
 
     private Timer classifyTimer = Metrics.newTimer(BinaryClassifier.class, "binaries", TimeUnit.MILLISECONDS, TimeUnit.SECONDS);
     private SortedSet<Regex> regexList;
+    private LoadingCache<String, List<Regex>> regexForGroup;
+    private Cache<String, Optional<Classification>> recentClassifications;
 
     @Inject
     public BinaryClassifier(RegexSource source) {
         this.regexList = new TreeSet<>(REGEX_COMPARATOR);
         this.regexList.addAll(source.load());
         LOG.info("Loaded {} regexes.", this.regexList.size());
+
+        this.regexForGroup = CacheBuilder.newBuilder().<String, List<Regex>>build(new CacheLoader<String, List<Regex>>() {
+            @Override
+            public List<Regex> load(String group) throws Exception {
+                List<Regex> matching = new ArrayList<>();
+                for(Regex regex : regexList) {
+                    if(regex.matchesGroup(group)) {
+                        matching.add(regex);
+                    }
+                }
+                return matching;
+            }
+        });
+
+        this.recentClassifications = CacheBuilder.newBuilder().maximumSize(1000).build();
+
+        this.bloomFilter = BloomFilter.create(new Funnel<String>() {
+            @Override
+            public void funnel(String from, PrimitiveSink into) {
+                into.putString(from);
+            }
+        }, 10000);
     }
 
     public Classification classify(String group, String subject) {
+        Optional<Classification> maybeClassification = this.recentClassifications.getIfPresent(group + subject);
+
+        if(maybeClassification != null) {
+            return maybeClassification.orNull();
+        }
+
         try(CloseableTimer ignored = startTimer(this.classifyTimer)) {
-            List<Regex> tests = this.findRegexForGroup(group);
+//            List<Regex> tests = this.findRegexForGroup(group);
+            List<Regex> tests = this.regexForGroup.getUnchecked(group);
 
             Matcher matching = null;
             for(Regex regex : tests) {
@@ -78,6 +117,8 @@ public class BinaryClassifier {
                     return null;
                 }
             }
+
+            this.recentClassifications.put(group + subject, Optional.fromNullable(classification));
 
             return classification;
         }
