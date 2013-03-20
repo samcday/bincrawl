@@ -10,7 +10,6 @@ public class RedisKeys {
     public static final String binaryPart(int num) {
         return "p:" + num;
     }
-    public static final String binaryGroup = "g";
     public static final String binarySubject = "s";
     public static final String binaryTotalParts = "n";
     public static final String binaryDate = "dt";
@@ -18,8 +17,6 @@ public class RedisKeys {
     public static final String binaryRelease = "r";
     public static final String binaryReleaseNum = "rn";
 
-    public static final String binaryProcess = "binaryProcess";
-    public static final String binaryProcessFailed = "binaryProcessFailed";
     public static final String binaryComplete = "binaryComplete";
 
     public static final String groups = "groups";

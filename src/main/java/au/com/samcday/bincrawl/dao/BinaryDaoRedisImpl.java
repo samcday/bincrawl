@@ -44,7 +44,7 @@ public class BinaryDaoRedisImpl implements BinaryDao {
     }
 
     @Override
-    public String createBinary(String group, String subject, int numParts, Overview overview) {
+    public String createOrUpdateBinary(String group, String subject, int numParts, Overview overview) {
         final String binaryHash = HASHER.hashString(subject).toString();
         String keyName = RedisKeys.binary(binaryHash);
 
@@ -63,7 +63,6 @@ public class BinaryDaoRedisImpl implements BinaryDao {
                 redisClient.watch(keyName);
                 Transaction t = redisClient.multi();
                 t.hmset(keyName, data);
-                t.lpush(RedisKeys.binaryProcess, binaryHash);
 
                 if(t.exec() != null) {
                     LOG.info("Created new binary with subject {} ({})", subject, binaryHash);

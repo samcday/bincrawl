@@ -42,12 +42,11 @@ public class BinaryDaoRedisImplTest {
                 return new Date();
             }
         };
-        String binaryHash = this.impl.createBinary("alt.test", "Test subject.", 100, overview);
+        String binaryHash = this.impl.createOrUpdateBinary("alt.test", "Test subject.", 100, overview);
 
         verify(this.mockJedis).exists(RedisKeys.binary(binaryHash));
         verify(this.mockJedis).watch(RedisKeys.binary(binaryHash));
         verify(mockTransaction).hmset(eq(RedisKeys.binary(binaryHash)), anyMap());
-        verify(mockTransaction).lpush(RedisKeys.binaryProcess, binaryHash);
         verify(this.mockJedis).sadd(RedisKeys.binaryGroups(binaryHash), "alt.test");
     }
 
@@ -62,7 +61,7 @@ public class BinaryDaoRedisImplTest {
 
         when(this.mockJedis.exists(RedisKeys.binary(anyString()))).thenReturn(true);
 
-        String binaryHash = this.impl.createBinary("alt.test", "Test subject.", 100, overview);
+        String binaryHash = this.impl.createOrUpdateBinary("alt.test", "Test subject.", 100, overview);
         verify(this.mockJedis, never()).watch(RedisKeys.binary(binaryHash));
     }
 
@@ -81,7 +80,7 @@ public class BinaryDaoRedisImplTest {
         };
 
         when(this.mockJedis.exists(RedisKeys.binary(anyString()))).thenReturn(true);
-        String binaryHash = this.impl.createBinary("alt.test", "Test subject.", 100, overview);
+        String binaryHash = this.impl.createOrUpdateBinary("alt.test", "Test subject.", 100, overview);
         verify(this.mockJedis).sadd(RedisKeys.binaryGroups(binaryHash), "alt.test");
         verify(this.mockJedis).sadd(RedisKeys.binaryGroups(binaryHash), "alt.other.group");
     }

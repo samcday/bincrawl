@@ -1,22 +1,15 @@
 package au.com.samcday.bincrawl;
 
-import au.com.samcday.bincrawl.dao.BinaryDao;
-import au.com.samcday.bincrawl.dao.entities.Binary;
-import au.com.samcday.bincrawl.pool.NntpClientPool;
-import au.com.samcday.jnntp.GroupInfo;
-import au.com.samcday.jnntp.NntpClient;
-import au.com.samcday.jnntp.Overview;
-import au.com.samcday.jnntp.OverviewList;
 import com.google.common.collect.Sets;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.yammer.metrics.reporting.ConsoleReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.Jedis;
-import redis.clients.jedis.JedisPool;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -33,7 +26,7 @@ public class App {
 //        final BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(fout));
 //        Crawler crawler = new Crawler(pool, new BinaryDao() {
 //            @Override
-//            public String createBinary(String group, String processedSubject, int numParts, Overview overview) {
+//            public String createOrUpdateBinary(String group, String processedSubject, int numParts, Overview overview) {
 //                try {
 //                    writer.write(processedSubject + "\n");
 //                    writer.flush();
@@ -81,10 +74,11 @@ public class App {
 
         System.out.printf("%d items. %d unique items.\n", lines.size(), Sets.newHashSet(lines).size());
 
+        ConsoleReporter.enable(1, TimeUnit.SECONDS);
         int total = 0;
         int matched = 0;
         long start = System.currentTimeMillis();
-        for(int i = 0; i < 1; i++) {
+        for(int i = 0; i < 100; i++) {
             for(String line : lines) {
                 if(classifier.classify("alt.binaries.hdtv", line) != null) matched++;
                 total++;
@@ -93,6 +87,7 @@ public class App {
 
         long took = System.currentTimeMillis() - start;
         System.out.printf("Took %dms to process %d items. Matched %d. %f per item\n", took, total, matched, (double) took / (double) total);
+
 
         if(1==1) return;
 

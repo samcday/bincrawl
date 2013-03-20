@@ -50,7 +50,7 @@ public class AppModule implements Module {
         config.setPort(Integer.parseInt(System.getProperty("nntp.port")));
         config.setUsername(System.getProperty("nntp.user"));
         config.setPassword(System.getProperty("nntp.pass"));
-//        config.setSsl(true);
+        config.setSsl(true);
         config.setMaxConnections(20);
         return config;
     }

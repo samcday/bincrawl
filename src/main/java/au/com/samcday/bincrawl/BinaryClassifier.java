@@ -5,13 +5,9 @@ import au.com.samcday.bincrawl.regex.RegexSource;
 import au.com.samcday.bincrawl.util.CloseableTimer;
 import com.google.common.base.Optional;
 import com.google.common.base.Splitter;
-import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.hash.BloomFilter;
-import com.google.common.hash.Funnel;
-import com.google.common.hash.PrimitiveSink;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.yammer.metrics.Metrics;
@@ -31,14 +27,15 @@ import static au.com.samcday.bincrawl.util.CloseableTimer.startTimer;
  */
 @Singleton
 public class BinaryClassifier {
+    private static final int CLASSIFICATION_CACHE_SIZE = 5000;
     private static final Logger LOG = LoggerFactory.getLogger(BinaryClassifier.class);
     private static final Splitter PARTS_SPLITTER = Splitter.on(Pattern.compile("-|~| of |/")).trimResults();
     private static final Comparator<Regex> REGEX_COMPARATOR = new RegexComparator();
 
-    private Timer classifyTimer = Metrics.newTimer(BinaryClassifier.class, "binaries", TimeUnit.MILLISECONDS, TimeUnit.SECONDS);
+    private Timer classifyTimer = Metrics.newTimer(BinaryClassifier.class, "classifications", TimeUnit.MILLISECONDS, TimeUnit.SECONDS);
     private SortedSet<Regex> regexList;
-    private LoadingCache<String, List<Regex>> regexForGroup;
-    private Cache<String, Optional<Classification>> recentClassifications;
+    private LoadingCache<String, List<Regex>> groupRegexCache;
+    private LoadingCache<GroupSubjectPair, Optional<Classification>> classificationCache;
 
     @Inject
     public BinaryClassifier(RegexSource source) {
@@ -46,39 +43,31 @@ public class BinaryClassifier {
         this.regexList.addAll(source.load());
         LOG.info("Loaded {} regexes.", this.regexList.size());
 
-        this.regexForGroup = CacheBuilder.newBuilder().<String, List<Regex>>build(new CacheLoader<String, List<Regex>>() {
-            @Override
-            public List<Regex> load(String group) throws Exception {
-                List<Regex> matching = new ArrayList<>();
-                for(Regex regex : regexList) {
-                    if(regex.matchesGroup(group)) {
-                        matching.add(regex);
-                    }
+        this.groupRegexCache = CacheBuilder.newBuilder()
+            .build(new CacheLoader<String, List<Regex>>() {
+                @Override
+                public List<Regex> load(String group) throws Exception {
+                    return getRegexListForGroup(group);
                 }
-                return matching;
-            }
-        });
+            });
 
-        this.recentClassifications = CacheBuilder.newBuilder().maximumSize(1000).build();
-
-        this.bloomFilter = BloomFilter.create(new Funnel<String>() {
-            @Override
-            public void funnel(String from, PrimitiveSink into) {
-                into.putString(from);
-            }
-        }, 10000);
+        this.classificationCache = CacheBuilder.newBuilder()
+            .maximumSize(CLASSIFICATION_CACHE_SIZE)
+            .build(new CacheLoader<GroupSubjectPair, Optional<Classification>>() {
+                @Override
+                public Optional<Classification> load(GroupSubjectPair key) throws Exception {
+                    return Optional.fromNullable(doClassify(key.group, key.subject));
+                }
+            });
     }
 
     public Classification classify(String group, String subject) {
-        Optional<Classification> maybeClassification = this.recentClassifications.getIfPresent(group + subject);
+        return this.classificationCache.getUnchecked(GroupSubjectPair.of(group, subject)).orNull();
+    }
 
-        if(maybeClassification != null) {
-            return maybeClassification.orNull();
-        }
-
+    private Classification doClassify(String group, String subject) {
         try(CloseableTimer ignored = startTimer(this.classifyTimer)) {
-//            List<Regex> tests = this.findRegexForGroup(group);
-            List<Regex> tests = this.regexForGroup.getUnchecked(group);
+            List<Regex> tests = this.groupRegexCache.getUnchecked(group);
 
             Matcher matching = null;
             for(Regex regex : tests) {
@@ -99,11 +88,10 @@ public class BinaryClassifier {
                 }
             }
 
-            Classification classification = null;
-
             // TODO: handle reposts.
             // TODO: maybe handle reqids?
 
+            Classification classification = null;
             if(matching != null) {
                 classification = new Classification();
                 classification.name = matching.group("name").trim();
@@ -118,16 +106,13 @@ public class BinaryClassifier {
                 }
             }
 
-            this.recentClassifications.put(group + subject, Optional.fromNullable(classification));
-
             return classification;
         }
     }
 
-    private List<Regex> findRegexForGroup(String group) {
-        // This method could probably be folded into a LoadingCache.
+    private List<Regex> getRegexListForGroup(String group) {
         List<Regex> matching = new ArrayList<>();
-        for(Regex regex : this.regexList) {
+        for(Regex regex : regexList) {
             if(regex.matchesGroup(group)) {
                 matching.add(regex);
             }
@@ -150,6 +135,31 @@ public class BinaryClassifier {
                 v2 += o2.getId();
             }
             return v1 - v2;
+        }
+    }
+
+    private static class GroupSubjectPair {
+        public static GroupSubjectPair of(String group, String subject) {
+            GroupSubjectPair pair = new GroupSubjectPair();
+            pair.group = group;
+            pair.subject = subject;
+
+            return pair;
+        }
+
+        String group;
+        String subject;
+
+        @Override
+        public boolean equals(Object obj) {
+            if(!(obj instanceof  GroupSubjectPair)) return false;
+            GroupSubjectPair other = (GroupSubjectPair)obj;
+            return Objects.equals(this.group, other.group) && Objects.equals(this.subject, other.subject);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(this.group, this.subject);
         }
     }
 }

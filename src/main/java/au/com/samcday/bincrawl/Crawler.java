@@ -119,18 +119,20 @@ public class Crawler {
             totalParts = Integer.parseInt(partMatcher.group(2));
         }
         catch(NumberFormatException nfe) {
-            LOG.warn("Error parsing a binary part number for article {}", overview.getArticle(), nfe);
+            LOG.warn("Error parsing a binary part number for article {} of {}", overview.getArticle(), group, nfe);
             return false;
         }
 
-        String name = buf.toString();
-        LOG.trace("Found binary part {} of {} for binary with subject {}", partNum, totalParts, name);
+        String parsedSubject = buf.toString();
+        LOG.trace("Found binary part {} of {} for binary with subject {}", partNum, totalParts, parsedSubject);
 
-        String binaryHash = this.binaryDao.createBinary(group, name, totalParts, overview);
-        this.binaryDao.addBinaryPart(binaryHash, partNum, overview);
-
-//        processor.processPart(group, name, overview.getDate(), overview.getBytes(), overview.getMessageId(), partNum,
-//            totalParts);
+        if(this.binaryClassifier.classify(group, parsedSubject) != null) {
+            String binaryHash = this.binaryDao.createOrUpdateBinary(group, parsedSubject, totalParts, overview);
+            this.binaryDao.addBinaryPart(binaryHash, partNum, overview);
+        }
+        else {
+            LOG.trace("Skipping {} of {} as we couldn't classify it.", overview.getArticle(), group);
+        }
 
         return true;
     }
