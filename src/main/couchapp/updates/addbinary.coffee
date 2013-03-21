@@ -1,13 +1,15 @@
 (doc, req) ->
   q = JSON.parse req.body
-  binaryHash = q.hash
+  binaryHash = q.binaryHash
   return [doc, "exists"] if doc?.binaries?.some (bin) -> bin.binaryHash is binaryHash
   newBinary = {}
   newBinary.binaryHash = binaryHash
   newBinary.group = q.group
-  newBinary.subject = q.name
+  newBinary.subject = q.subject
   newBinary.date = new Date parseInt q.date
-  newBinary.binarySegments = ({size: q["part#{i}_size"], messageId: q["part#{i}_id"]} for i in [1..q.num])
+
+  newBinary.binarySegments = (q.parts.sort (a, b) -> a.partNum - b.partNum)
+  delete part.partNum for part in newBinary.binarySegments
 
   doc.date = newBinary.date if newBinary.date and (not doc.date or (new Date(doc.date) < newBinary.date))
 

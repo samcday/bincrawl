@@ -3,7 +3,6 @@ package au.com.samcday.bincrawl.web;
 import au.com.samcday.bincrawl.AppModule;
 import au.com.samcday.bincrawl.services.BincrawlServiceManager;
 import au.com.samcday.bincrawl.web.auth.HardcodedAuthenticator;
-import au.com.samcday.bincrawl.web.entities.Admin;
 import au.com.samcday.bincrawl.web.filters.CORSFilter;
 import com.fiestacabin.dropwizard.guice.AutoConfigService;
 import com.google.common.util.concurrent.ServiceManager;
@@ -33,7 +32,7 @@ public class BincrawlService extends AutoConfigService<BincrawlConfiguration> {
         super.runWithInjector(configuration, environment, injector);
 
         environment.addFilter(CORSFilter.class, "/*");
-        environment.addProvider(new BasicAuthProvider<Admin>(new HardcodedAuthenticator(), "bincrawl"));
+        environment.addProvider(new BasicAuthProvider<>(new HardcodedAuthenticator(), "bincrawl"));
 
         ServiceManager sm = injector.getInstance(BincrawlServiceManager.class).get();
         sm.startAsync();

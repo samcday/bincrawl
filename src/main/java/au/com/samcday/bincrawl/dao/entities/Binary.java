@@ -1,20 +1,16 @@
 package au.com.samcday.bincrawl.dao.entities;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import org.joda.time.DateTime;
 
 import java.util.List;
-import java.util.Set;
 
 public class Binary {
     private String binaryHash;
-    private String releaseId;
-    private Integer releaseNum;
     private String subject;
     private int totalParts;
     private DateTime date;
-    private Set<String> groups;
+    private String group;
     private List<BinaryPart> parts;
 
     public String getBinaryHash() {
@@ -57,27 +53,11 @@ public class Binary {
         this.parts = parts;
     }
 
-    public Set<String> getGroups() {
-        return ImmutableSet.copyOf(groups);
+    public String getGroup() {
+        return group;
     }
 
-    public void setGroups(Set<String> groups) {
-        this.groups = groups;
-    }
-
-    public String getReleaseId() {
-        return releaseId;
-    }
-
-    public void setReleaseId(String releaseId) {
-        this.releaseId = releaseId;
-    }
-
-    public Integer getReleaseNum() {
-        return releaseNum;
-    }
-
-    public void setReleaseNum(Integer releaseNum) {
-        this.releaseNum = releaseNum;
+    public void setGroup(String group) {
+        this.group = group;
     }
 }

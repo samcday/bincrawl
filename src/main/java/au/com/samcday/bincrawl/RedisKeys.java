@@ -13,6 +13,7 @@ public class RedisKeys {
     public static final String binarySubject = "s";
     public static final String binaryTotalParts = "n";
     public static final String binaryDate = "dt";
+    public static final String binaryGroup = "g";
     public static final String binaryDone = "d";
     public static final String binaryRelease = "r";
     public static final String binaryReleaseNum = "rn";
@@ -32,9 +33,5 @@ public class RedisKeys {
 
     public static final String missing(String group) {
         return "missing:" + group;
-    }
-
-    public static String binaryGroups(String binaryHash) {
-        return "b:" + binaryHash + ":groups";
     }
 }

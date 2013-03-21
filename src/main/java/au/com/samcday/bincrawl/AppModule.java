@@ -10,6 +10,7 @@ import au.com.samcday.bincrawl.pool.BetterJedisPool;
 import au.com.samcday.bincrawl.regex.RegexSource;
 import au.com.samcday.bincrawl.regex.StaticRegexSource;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.joda.JodaModule;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Provides;
@@ -79,7 +80,9 @@ public class AppModule implements Module {
     @Provides
     @Singleton
     ObjectMapper provideObjectMapper() {
-        return new ObjectMapper();
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JodaModule());
+        return mapper;
     }
 
 }

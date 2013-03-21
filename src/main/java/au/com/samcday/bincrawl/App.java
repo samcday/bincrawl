@@ -1,14 +1,14 @@
 package au.com.samcday.bincrawl;
 
-import au.com.samcday.bincrawl.pool.BetterJedisPool;
-import au.com.samcday.bincrawl.pool.PooledJedis;
+import au.com.samcday.bincrawl.dao.BinaryDao;
+import au.com.samcday.bincrawl.dao.entities.Binary;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.yammer.metrics.reporting.ConsoleReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class App {
@@ -17,33 +17,38 @@ public class App {
     public static final void main(String... args) throws Exception {
         Injector injector = Guice.createInjector(new AppModule());
 
-        BetterJedisPool redisPool = injector.getInstance(BetterJedisPool.class);
-        BinaryClassifier classifier = injector.getInstance(BinaryClassifier.class);
+        BinaryDao binaryDao = injector.getInstance(BinaryDao.class);
 
-        try (PooledJedis redisClient = redisPool.get()) {
-            Set<String> keys = redisClient.keys("b:*");
-            for (String key : keys) {
-                if(key.endsWith(":groups")) continue;
-                String subj = redisClient.hget(key, RedisKeys.binarySubject);
+        Binary binary = binaryDao.getBinary("f742abe1");
+        injector.getInstance(ObjectMapper.class).writeValue(System.out, binary);
 
-                Set<String> groups = redisClient.smembers(key + ":groups");
-
-                if(groups.size() > 1) {
-                    System.out.println(subj + ":");
-                    for (String group : groups) {
-                        BinaryClassifier.Classification classification = classifier.classify(group, subj);
-                        System.out.println(group + ": " + (classification != null ? classification.name : "NULL"));
-                    }
-                    System.out.println();
-                }
-
-            }
-        }
-
-        if(1==1) return;
+//        BetterJedisPool redisPool = injector.getInstance(BetterJedisPool.class);
+//        BinaryClassifier classifier = injector.getInstance(BinaryClassifier.class);
+//
+//        try (PooledJedis redisClient = redisPool.get()) {
+//            Set<String> keys = redisClient.keys("b:*");
+//            for (String key : keys) {
+//                if(key.endsWith(":groups")) continue;
+//                String subj = redisClient.hget(key, RedisKeys.binarySubject);
+//
+//                Set<String> groups = redisClient.smembers(key + ":groups");
+//
+//                if(groups.size() > 1) {
+//                    System.out.println(subj + ":");
+//                    for (String group : groups) {
+//                        BinaryClassifier.Classification classification = classifier.classify(group, subj);
+//                        System.out.println(group + ": " + (classification != null ? classification.name : "NULL"));
+//                    }
+//                    System.out.println();
+//                }
+//
+//            }
+//        }
+//
+//        if(1==1) return;
 
 //        Crawler crawler = injector.getInstance(Crawler.class);
-//        crawler.crawl("alt.binaries.teevee", 485002735l - 500000, 485002735l);
+//        crawler.crawl("alt.binaries.teevee", 485002735l - 5000, 485002735l);
 //
 //        if(1==1) return;
 

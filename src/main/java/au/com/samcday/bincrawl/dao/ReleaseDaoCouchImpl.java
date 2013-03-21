@@ -1,15 +1,15 @@
 package au.com.samcday.bincrawl.dao;
 
+import au.com.samcday.bincrawl.BinaryClassifier;
 import au.com.samcday.bincrawl.dao.entities.Binary;
 import au.com.samcday.bincrawl.dto.Release;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import org.ektorp.CouchDbConnector;
+import org.ektorp.UpdateConflictException;
 import org.ektorp.http.RestTemplate;
 import org.ektorp.http.URI;
-
-import java.util.List;
 
 public class ReleaseDaoCouchImpl implements ReleaseDao {
     private CouchDbConnector couchDb;
@@ -20,14 +20,15 @@ public class ReleaseDaoCouchImpl implements ReleaseDao {
         this.couchDb = couchDb;
         this.objectMapper = objectMapper;
     }
-/*
+
     @Override
-    public Release createRelease(BinaryClassifier.Classification classification) {
+    public Release createRelease(String group, BinaryClassifier.Classification classification) {
         while(true) {
-            Release release = this.couchDb.find(Release.class, Release.buildId(classification.name));
+            String releaseId = Release.buildId(group, classification.name);
+            Release release = this.couchDb.find(Release.class, releaseId);
             if(release == null) {
                 release = new Release();
-                release.setId(Release.buildId(classification.name));
+                release.setId(releaseId);
                 release.setName(classification.name);
                 release.setCount(classification.totalParts);
                 try {
@@ -43,16 +44,11 @@ public class ReleaseDaoCouchImpl implements ReleaseDao {
             }
             return release;
         }
-    }*/
-
-    @Override
-    public Release createRelease(List<String> groups) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     @Override
-    public void addCompletedBinary(Binary binary) {
-        this.executeBetterUpdateHandler(binary.getReleaseId(), binary);
+    public void addCompletedBinary(String releaseId, Binary binary) {
+        this.executeBetterUpdateHandler(releaseId, binary);
     }
 
     /**

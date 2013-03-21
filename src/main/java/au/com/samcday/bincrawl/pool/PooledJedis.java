@@ -13,7 +13,7 @@ import java.util.Set;
 
 public class PooledJedis implements JedisCommands, BinaryJedisCommands, BetterJedisCommands, AutoCloseable {
     private Jedis decorated;
-    private JedisPool jedisPool;
+    private BetterJedisPool jedisPool;
 
     public PooledJedis(BetterJedisPool jedisPool, Jedis decorated) {
         this.decorated = decorated;

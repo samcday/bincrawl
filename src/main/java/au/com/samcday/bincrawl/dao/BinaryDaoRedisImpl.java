@@ -6,7 +6,6 @@ import au.com.samcday.bincrawl.dao.entities.BinaryPart;
 import au.com.samcday.bincrawl.pool.BetterJedisPool;
 import au.com.samcday.bincrawl.pool.PooledJedis;
 import au.com.samcday.jnntp.Overview;
-import au.com.samcday.jnntp.Xref;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -14,7 +13,6 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import com.google.common.primitives.Ints;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.joda.time.DateTime;
@@ -43,13 +41,14 @@ public class BinaryDaoRedisImpl implements BinaryDao {
 
     @Override
     public String createOrUpdateBinary(String group, String subject, int numParts, Overview overview) {
-        final String binaryHash = HASHER.hashString(subject).toString();
+        final String binaryHash = HASHER.hashString(group + subject).toString();
         String keyName = RedisKeys.binary(binaryHash);
 
         Map<String, String> data = ImmutableMap.of(
             RedisKeys.binarySubject, subject,
             RedisKeys.binaryTotalParts, Integer.toString(numParts),
-            RedisKeys.binaryDate, Long.toString(overview.getDate().getTime())
+            RedisKeys.binaryDate, Long.toString(overview.getDate().getTime()),
+            RedisKeys.binaryGroup, group
         );
 
         try(PooledJedis redisClient = this.redisPool.get()) {
@@ -65,15 +64,6 @@ public class BinaryDaoRedisImpl implements BinaryDao {
                 if(t.exec() != null) {
                     LOG.info("Created new binary with subject {} ({})", subject, binaryHash);
                     break;
-                }
-            }
-
-            redisClient.sadd(RedisKeys.binaryGroups(binaryHash), group);
-
-            Xref xref = overview.getXref();
-            if(xref != null) {
-                for(Xref.Location loc : xref.getLocations()) {
-                    redisClient.sadd(RedisKeys.binaryGroups(binaryHash), loc.getGroup());
                 }
             }
 
@@ -104,7 +94,9 @@ public class BinaryDaoRedisImpl implements BinaryDao {
 
     @Override
     public void deleteBinary(String binaryHash) {
-
+        try(PooledJedis redisClient = this.redisPool.get()) {
+            redisClient.del(RedisKeys.binary(binaryHash));
+        }
     }
 
     @Override
@@ -115,14 +107,10 @@ public class BinaryDaoRedisImpl implements BinaryDao {
 
             Binary binary = new Binary();
             binary.setBinaryHash(binaryHash);
-            binary.setReleaseId(data.get(RedisKeys.binaryRelease));
-            binary.setReleaseNum(Ints.tryParse(data.get(RedisKeys.binaryReleaseNum)));
             binary.setSubject(data.get(RedisKeys.binarySubject));
-            binary.setReleaseId(data.get(RedisKeys.binaryRelease));
-            binary.setReleaseNum(Ints.tryParse(RedisKeys.binaryReleaseNum));
             binary.setDate(new DateTime(Long.parseLong(data.get(RedisKeys.binaryDate))));
             binary.setTotalParts(Integer.parseInt(data.get(RedisKeys.binaryTotalParts)));
-            binary.setGroups(redisClient.smembers(RedisKeys.binaryGroups(binaryHash)));
+            binary.setGroup(data.get(RedisKeys.binaryGroup));
 
             List<BinaryPart> parts = new ArrayList<>();
             for(Map.Entry<String, String> entry : data.entrySet()) {
@@ -143,14 +131,6 @@ public class BinaryDaoRedisImpl implements BinaryDao {
     }
 
     @Override
-    public void setReleaseInfo(String binaryHash, String releaseId, int num) {
-        try(PooledJedis redisClient = this.redisPool.get()) {
-            redisClient.hsetnx(RedisKeys.binary(binaryHash), RedisKeys.binaryRelease, releaseId);
-            redisClient.hsetnx(RedisKeys.binary(binaryHash), RedisKeys.binaryReleaseNum, Integer.toString(num));
-        }
-    }
-
-    @Override
     public void processCompletedBinary(CompletedBinaryHandler handler) {
         try(PooledJedis redisClient = this.redisPool.get()) {
             String binaryHash = redisClient.brpopsingle(0, RedisKeys.binaryComplete);
@@ -164,8 +144,12 @@ public class BinaryDaoRedisImpl implements BinaryDao {
             }
             catch(Exception e) {}
             finally {
-                if(!success)
+                if(success) {
+                    this.deleteBinary(binaryHash);
+                }
+                else {
                     redisClient.lpush(RedisKeys.binaryComplete, binaryHash);
+                }
             }
         }
     }

@@ -1,15 +1,12 @@
 package au.com.samcday.bincrawl.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
 import org.joda.time.DateTime;
 
 import java.util.List;
 
 public class Release {
-    private static final HashFunction SHA1 = Hashing.sha1();
-
     @JsonProperty("_id")
     @org.codehaus.jackson.annotate.JsonProperty("_id")
     private String id;
@@ -22,8 +19,8 @@ public class Release {
     private int count;
     private List<ReleaseBinary> binaries;
 
-    public static String buildId(String name) {
-        return SHA1.hashString(name).toString();
+    public static String buildId(String group, String name) {
+        return Hashing.murmur3_128().newHasher().putString(name).putString(group).hash().toString();
     }
 
     public String getId() {
