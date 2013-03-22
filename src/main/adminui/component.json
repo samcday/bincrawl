@@ -8,7 +8,14 @@
     "angular-resource": "~1.0.5",
     "angular-cookies": "~1.0.5",
     "angular-sanitize": "~1.0.5",
-    "angular-http-auth": "git://github.com/samcday/angular-http-auth.git"
+    "angular-http-auth": "git://github.com/samcday/angular-http-auth.git",
+    "base64": "~0.1.1",
+    "jquery": "~1.9.1",
+    "underscore": "~1.4.4",
+    "socket.io-client": "~0.9.11",
+    "spin.js": "~1.2.8",
+    "angular-bootstrap": "~0.2.0",
+    "bootstrap-js": "latest"
   },
   "devDependencies": {
     "angular-mocks": "~1.0.5",
