@@ -14,6 +14,7 @@ public class Release {
     @org.codehaus.jackson.annotate.JsonProperty("_rev")
     private String rev;
 
+    private DateTime crawledDate;
     private DateTime date;
     private String name;
     private int count;
@@ -65,5 +66,13 @@ public class Release {
 
     public void addBinary(ReleaseBinary binary, int num) {
         this.binaries.set(num, binary);
+    }
+
+    public DateTime getCrawledDate() {
+        return crawledDate;
+    }
+
+    public void setCrawledDate(DateTime crawledDate) {
+        this.crawledDate = crawledDate;
     }
 }

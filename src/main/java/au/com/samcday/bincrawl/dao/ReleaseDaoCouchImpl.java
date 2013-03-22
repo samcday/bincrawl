@@ -10,6 +10,7 @@ import org.ektorp.CouchDbConnector;
 import org.ektorp.UpdateConflictException;
 import org.ektorp.http.RestTemplate;
 import org.ektorp.http.URI;
+import org.joda.time.DateTime;
 
 public class ReleaseDaoCouchImpl implements ReleaseDao {
     private CouchDbConnector couchDb;
@@ -31,6 +32,7 @@ public class ReleaseDaoCouchImpl implements ReleaseDao {
                 release.setId(releaseId);
                 release.setName(classification.name);
                 release.setCount(classification.totalParts);
+                release.setCrawledDate(new DateTime());
                 try {
                     this.couchDb.create(release);
                 }

@@ -33,6 +33,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class CrawlService extends AbstractExecutionThreadService {
     private static final Logger LOG = LoggerFactory.getLogger(CrawlService.class);
 
+    private int maxConnections;
     private BlockingExecutorService pool;
     private ListeningExecutorService listenablePool;
     private ConcurrentLinkedQueue<String> updateGroups;
@@ -56,10 +57,11 @@ public class CrawlService extends AbstractExecutionThreadService {
 
     @Override
     protected void startUp() throws Exception {
+        this.maxConnections = 20;
         this.updateGroups = new ConcurrentLinkedQueue<>();
         this.backfillGroups = new ConcurrentLinkedQueue<>();
         this.groups = new HashMap<>();
-        this.pool = new BlockingExecutorService(20, new CrawlServiceThreadFactory());
+        this.pool = new BlockingExecutorService(this.maxConnections, new CrawlServiceThreadFactory());
         this.listenablePool = MoreExecutors.listeningDecorator(this.pool);
     }
 
@@ -146,6 +148,15 @@ public class CrawlService extends AbstractExecutionThreadService {
         catch(ExecutionException ee) {
             LOG.warn("Couldn't update group info", ee);
         }
+    }
+
+    public void setMaxConnections(int maxConnections) {
+        this.maxConnections = maxConnections;
+        this.pool.resize(maxConnections);
+    }
+
+    public int getMaxConnections() {
+        return this.maxConnections;
     }
 
     public void addNewGroup(String groupName) {

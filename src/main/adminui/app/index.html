@@ -11,6 +11,7 @@
     <meta name="viewport" content="width=device-width">
     <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
     <link rel="stylesheet" href="styles/main.css">
+    <link rel="stylesheet" href="components/font-awesome/css/font-awesome.css">
   </head>
   <body ng-app="adminuiApp">
     <!--[if lt IE 7]>
@@ -28,8 +29,9 @@
           <a class="brand" href="#">bincrawler.</a>
 
           <div class="navbar-text pull-right" ng-controller="BandwidthCtrl">
-            <i class="icon-upload"></i> {{upload | dataspeed}}
-            <i class="icon-download"></i> {{download | dataspeed}}
+            <i class="icon-bolt"></i> <span tooltip="Active NNTP connections" tooltip-placement="bottom">19</span>
+            <i class="icon-cloud-upload"></i> {{upload | dataspeed}}
+            <i class="icon-cloud-download"></i> {{download | dataspeed}}
 
             <i ng-hide="auth.loggedIn" ng-click="auth.showLogin()" class="icon-user"></i>
           </div>

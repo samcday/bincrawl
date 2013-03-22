@@ -53,9 +53,10 @@ updateGroup = (group) ->
 		json: true
 	, (err, resp, body) ->
 		unless err or not body or not body.name
-			groups[body.name] = body
+			name = body.name
+			groups[name] = body
 			groupUpdate = {}
-			groupUpdate[body.name] = groups[body.name]
+			groupUpdate[name] = _.extend groups[name], groupActivity[name]
 			(io.sockets.in "groups").emit "groupUpdate", groupUpdate
 
 updateGroupActivity = (msg) ->
