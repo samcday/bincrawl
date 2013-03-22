@@ -1,6 +1,7 @@
 package au.com.samcday.bincrawl.util;
 
 import com.google.common.base.Throwables;
+import com.google.common.primitives.Ints;
 import com.google.common.util.concurrent.ForwardingExecutorService;
 
 import java.util.concurrent.*;
@@ -32,7 +33,9 @@ public class BlockingExecutorService extends ForwardingExecutorService {
         this.numPermits = size;
         this.semaphore = new ReducibleSemaphore(size);
         this.inProgress = new AtomicInteger();
-        this.executor = new ThreadPoolExecutor(size, size, 1, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(),
+
+        int threadPoolSize = Ints.max(size, 1);
+        this.executor = new ThreadPoolExecutor(threadPoolSize, threadPoolSize, 1, TimeUnit.MINUTES, new LinkedBlockingQueue<Runnable>(),
                 threadFactory) {
             @Override
             protected void afterExecute(Runnable r, Throwable t) {
@@ -85,17 +88,19 @@ public class BlockingExecutorService extends ForwardingExecutorService {
         int oldSize = this.numPermits;
         this.numPermits = newSize;
 
+        int newPoolSize = Ints.max(newSize, 1);
+
         // Note the order in which we reduce/increase semaphore size and then readjust pool size. Think about it a sec
         // before you try and change it.
         if(oldSize > newSize) {
             this.semaphore.reducePermits(oldSize - newSize);
 
-            this.executor.setCorePoolSize(newSize);
-            this.executor.setMaximumPoolSize(newSize);
+            this.executor.setCorePoolSize(newPoolSize);
+            this.executor.setMaximumPoolSize(newPoolSize);
         }
         else {
-            this.executor.setCorePoolSize(newSize);
-            this.executor.setMaximumPoolSize(newSize);
+            this.executor.setCorePoolSize(newPoolSize);
+            this.executor.setMaximumPoolSize(newPoolSize);
 
             this.semaphore.release(newSize - oldSize);
         }
