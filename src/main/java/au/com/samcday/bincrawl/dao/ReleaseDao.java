@@ -9,5 +9,5 @@ public interface ReleaseDao {
      * Adds a completed binary to a new or existing Release.
      * @return
      */
-    public Release addCompletedBinary(String group, BinaryClassifier.Classification classification, Binary binary);
+    public String addCompletedBinary(String group, BinaryClassifier.Classification classification, Binary binary);
 }

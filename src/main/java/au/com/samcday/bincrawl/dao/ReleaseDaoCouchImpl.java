@@ -5,12 +5,13 @@ import au.com.samcday.bincrawl.dao.entities.Binary;
 import au.com.samcday.bincrawl.dto.Release;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.ektorp.CouchDbConnector;
-import org.ektorp.UpdateConflictException;
 import org.ektorp.http.RestTemplate;
 import org.ektorp.http.URI;
-import org.joda.time.DateTime;
+
+import java.util.Map;
 
 public class ReleaseDaoCouchImpl implements ReleaseDao {
     private CouchDbConnector couchDb;
@@ -23,9 +24,17 @@ public class ReleaseDaoCouchImpl implements ReleaseDao {
     }
 
     @Override
+    public String addCompletedBinary(String group, BinaryClassifier.Classification classification, Binary binary) {
+        String releaseId = Release.buildId(group, classification.name);
+        Map<String, Object> data = ImmutableMap.of("group", group, "binary", binary, "classification", classification);
+        this.executeBetterUpdateHandler(releaseId, data);
+        return releaseId;
+    }
+
+    /*@Override
     public Release createRelease(String group, BinaryClassifier.Classification classification) {
         while(true) {
-            String releaseId = Release.buildId(group, classification.name);
+
             Release release = this.couchDb.find(Release.class, releaseId);
             if(release == null) {
                 release = new Release();
@@ -46,12 +55,7 @@ public class ReleaseDaoCouchImpl implements ReleaseDao {
             }
             return release;
         }
-    }
-
-    @Override
-    public void addCompletedBinary(String releaseId, Binary binary) {
-        this.executeBetterUpdateHandler(releaseId, binary);
-    }
+    }*/
 
     /**
      * Ektorp CouchDbConnector supports update handlers, but doesn't let you send a body.
