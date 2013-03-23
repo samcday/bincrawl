@@ -76,15 +76,17 @@ public class BinaryDaoRedisImpl implements BinaryDao {
         try(PooledJedis redisClient = this.redisPool.get()) {
             String binaryKey = RedisKeys.binary(binaryHash);
 
-            redisClient.hsetnx(binaryKey, RedisKeys.binaryPart(partNum), this.objectMapper.writeValueAsString(
-                this.objectMapper.createArrayNode().add(overview.getMessageId()).add(overview.getBytes())));
+            boolean added = redisClient.hsetnx(binaryKey, RedisKeys.binaryPart(partNum), this.objectMapper.writeValueAsString(
+                this.objectMapper.createArrayNode().add(overview.getMessageId()).add(overview.getBytes()))) == 1;
 
-            int totalParts = redisClient.hgetint(binaryKey, RedisKeys.binaryTotalParts).get();
-            int numPartsDone = redisClient.hincrBy(binaryKey, RedisKeys.binaryDone, 1).intValue();
+            if(added) {
+                int totalParts = redisClient.hgetint(binaryKey, RedisKeys.binaryTotalParts).get();
+                int numPartsDone = redisClient.hincrBy(binaryKey, RedisKeys.binaryDone, 1).intValue();
 
-            if(numPartsDone >= totalParts) {
-                LOG.trace("Got all parts for binary {}", binaryHash);
-                redisClient.lpush(RedisKeys.binaryComplete, binaryHash);
+                if(numPartsDone >= totalParts) {
+                    LOG.trace("Got all parts for binary {}", binaryHash);
+                    redisClient.lpush(RedisKeys.binaryComplete, binaryHash);
+                }
             }
         }
         catch(JsonProcessingException jpe) {
@@ -137,12 +139,15 @@ public class BinaryDaoRedisImpl implements BinaryDao {
             LOG.info("Processing complete binary {}", binaryHash);
 
             Binary completed = this.getBinary(binaryHash);
+            if(completed == null) return;
 
             boolean success = false;
             try {
                 success = handler.handle(completed);
             }
-            catch(Exception e) {}
+            catch(Exception e) {
+                LOG.warn("Caught unhandled exception from completed binary handler.", e);
+            }
             finally {
                 if(success) {
                     this.deleteBinary(binaryHash);

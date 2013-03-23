@@ -29,7 +29,7 @@
           <a class="brand" href="#">bincrawler.</a>
 
           <div class="navbar-text pull-right" ng-controller="BandwidthCtrl">
-            <i class="icon-bolt"></i> <span tooltip="Active NNTP connections" tooltip-placement="bottom">19</span>
+            <i class="icon-bolt"></i> <span tooltip="Active NNTP connections" tooltip-placement="bottom">{{connections || 0}}</span>
             <i class="icon-cloud-upload"></i> {{upload | dataspeed}}
             <i class="icon-cloud-download"></i> {{download | dataspeed}}
 

@@ -29,23 +29,37 @@ groups = {}
 groupActivity = {}
 
 updateBandwidth = ->
-	request.get
-		url: metricsEndpoint
-		json: true
-	, (err, resp, body) ->
-		unless err or not body or not body[metricsKeys.nntpBandwidth]
-			stats = body[metricsKeys.nntpBandwidth]
-			io.sockets.emit "bandwidth",
-				read: stats.read.m1, write: stats.written.m1
+	async.parallel {
+		bw: (cb) ->
+			request.get
+				url: metricsEndpoint
+				json: true
+			, (err, resp, body) ->
+				return (cb err or "Error") if err or not body or not body[metricsKeys.nntpBandwidth]
+				cb null, body[metricsKeys.nntpBandwidth]
+		conns: (cb) ->
+			request.get
+				url: endpoint + "/_nntp/current_connections"
+			, (err, resp, body) ->
+				return (cb err or "Error") if err or not body
+				connections = parseInt body
+				cb null, connections
+	}, (err, results) ->
+		unless err
+			io.sockets.emit "bandwidth", read: results.bw.read.m1, write: results.bw.written.m1, connections: results.conns
 		setTimeout updateBandwidth, 1000
 
-updateAllGroups = (group) ->
+updateAllGroups = ->
 	request.get
 		url: "#{endpoint}/group"
 		json: true
 	, (err, resp, body) ->
 		unless err or not body or not body.length
 			groups[group.name] = group for group in body
+			allGroups = {}
+			allGroups[name] = (_.extend groups[name], groupActivity[name]) for name, group of groups
+			(io.sockets.in "groups").emit "groupUpdate", allGroups
+		setTimeout updateAllGroups, 10000
 
 updateGroup = (group) ->
 	request.get

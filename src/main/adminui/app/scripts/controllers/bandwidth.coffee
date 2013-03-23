@@ -6,3 +6,4 @@ angular.module('adminuiApp').controller 'BandwidthCtrl', ($scope, socket) ->
 		{read, write} = info
 		$scope.upload = write
 		$scope.download = read
+		$scope.connections = info.connections

@@ -8,6 +8,7 @@ import au.com.samcday.jnntp.bandwidth.BandwidthHandler;
 import au.com.samcday.jnntp.bandwidth.HandlerRegistration;
 import au.com.samcday.jnntp.exceptions.NntpClientAuthenticationException;
 import au.com.samcday.jnntp.exceptions.NntpClientConnectionError;
+import com.google.common.base.Throwables;
 
 import java.io.InputStream;
 import java.util.Date;
@@ -23,8 +24,13 @@ public class PooledNntpClient implements NntpClient, AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
-        nntpClientPool.returnObject(this.decorated);
+    public void close() {
+        try {
+            nntpClientPool.returnObject(this.decorated);
+        }
+        catch(Exception e) {
+            Throwables.propagate(e);
+        }
     }
 
     @Override

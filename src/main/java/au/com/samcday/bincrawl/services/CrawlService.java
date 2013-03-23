@@ -3,7 +3,9 @@ package au.com.samcday.bincrawl.services;
 import au.com.samcday.bincrawl.Group;
 import au.com.samcday.bincrawl.RedisKeys;
 import au.com.samcday.bincrawl.pool.BetterJedisPool;
+import au.com.samcday.bincrawl.pool.NntpClientPool;
 import au.com.samcday.bincrawl.pool.PooledJedis;
+import au.com.samcday.bincrawl.pool.PooledNntpClient;
 import au.com.samcday.bincrawl.tasks.ArticleBackfillTask;
 import au.com.samcday.bincrawl.tasks.ArticleUpdateTask;
 import au.com.samcday.bincrawl.tasks.GroupInfoTask;
@@ -19,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
@@ -45,14 +46,16 @@ public class CrawlService extends AbstractExecutionThreadService {
     private Provider<ArticleUpdateTask> updateTaskProvider;
     private Provider<ArticleBackfillTask> backfillTaskProvider;
     private Provider<GroupInfoTask> groupInfoTaskProvider;
+    private NntpClientPool nntpClientPool;
 
     @Inject
     public CrawlService(BetterJedisPool redisPool, Provider<ArticleUpdateTask> updateTaskProvider,
-                        Provider<ArticleBackfillTask> backfillTaskProvider, Provider<GroupInfoTask> groupInfoTaskProvider) {
+                        Provider<ArticleBackfillTask> backfillTaskProvider, Provider<GroupInfoTask> groupInfoTaskProvider, NntpClientPool nntpClientPool) {
         this.updateTaskProvider = updateTaskProvider;
         this.redisPool = redisPool;
         this.backfillTaskProvider = backfillTaskProvider;
         this.groupInfoTaskProvider = groupInfoTaskProvider;
+        this.nntpClientPool = nntpClientPool;
     }
 
     @Override
@@ -155,16 +158,16 @@ public class CrawlService extends AbstractExecutionThreadService {
         this.pool.resize(maxConnections);
     }
 
-    public int getMaxConnections() {
-        return this.maxConnections;
-    }
-
     public void addNewGroup(String groupName) {
         try(AutoLockable ignored = AutoLockable.lock(this.workLock); PooledJedis redisClient = this.redisPool.get()) {
             assert !this.groups.containsKey(groupName);
-            Future<Group> future = this.pool.submit(this.groupInfoTaskProvider.get().configure(groupName));
-            this.workAvailable.signal();
-            Group group = Futures.getUnchecked(future);
+
+            Group group;
+            try(PooledNntpClient nntpClient = this.nntpClientPool.borrow()) {
+                LOG.info("Getting group info for {}", groupName);
+                group = Group.of(groupName, nntpClient.group(groupName));
+            }
+
             this.groups.put(groupName, group);
             redisClient.hsetnx(RedisKeys.group(groupName), RedisKeys.groupEnd, Long.toString(group.high));
             redisClient.hsetnx(RedisKeys.group(groupName), RedisKeys.groupStart, Long.toString(group.high));
@@ -173,6 +176,8 @@ public class CrawlService extends AbstractExecutionThreadService {
             boolean backfill = redisClient.hget(RedisKeys.group(groupName), RedisKeys.groupMaxAge) != null;
             if(backfill) this.backfillGroups.add(groupName);
             this.updateGroups.add(groupName);
+
+            this.workAvailable.signal();
         }
     }
 
