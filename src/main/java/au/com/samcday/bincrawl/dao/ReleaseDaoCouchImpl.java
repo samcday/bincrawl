@@ -2,12 +2,14 @@ package au.com.samcday.bincrawl.dao;
 
 import au.com.samcday.bincrawl.BinaryClassifier;
 import au.com.samcday.bincrawl.dao.entities.Binary;
+import au.com.samcday.bincrawl.dao.exceptions.ReleaseUpdateException;
 import au.com.samcday.bincrawl.dto.Release;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.ektorp.CouchDbConnector;
+import org.ektorp.UpdateConflictException;
 import org.ektorp.http.RestTemplate;
 import org.ektorp.http.URI;
 
@@ -27,7 +29,17 @@ public class ReleaseDaoCouchImpl implements ReleaseDao {
     public String addCompletedBinary(String group, BinaryClassifier.Classification classification, Binary binary) {
         String releaseId = Release.buildId(group, classification.name);
         Map<String, Object> data = ImmutableMap.of("group", group, "binary", binary, "classification", classification);
-        this.executeBetterUpdateHandler(releaseId, data);
+
+        int tries = 5;
+        try {
+            if(tries-- < 0) {
+                throw new ReleaseUpdateException(new Exception("Failed to call update handler after 5 tries."));
+            }
+            this.executeBetterUpdateHandler(releaseId, data);
+        }
+        catch(UpdateConflictException uce) {
+
+        }
         return releaseId;
     }
 
