@@ -1,4 +1,4 @@
-package au.com.samcday.bincrawl.dto;
+package au.com.samcday.bincrawl.dao.entities;
 
 import au.com.samcday.bincrawl.dao.entities.Binary;
 import com.fasterxml.jackson.annotation.JsonProperty;
