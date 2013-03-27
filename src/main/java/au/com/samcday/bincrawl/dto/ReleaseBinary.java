@@ -2,16 +2,9 @@ package au.com.samcday.bincrawl.dto;
 
 import org.joda.time.DateTime;
 
-import java.util.Comparator;
 import java.util.List;
 
 public class ReleaseBinary {
-    public static final Comparator<ReleaseBinary> COMPARATOR  = new Comparator<ReleaseBinary>() {
-        @Override
-        public int compare(ReleaseBinary o1, ReleaseBinary o2) {
-            return String.CASE_INSENSITIVE_ORDER.compare(o1.getSubject(), o2.getSubject());
-        }
-    };
     private String binaryHash;
     private String group;
     private String poster;

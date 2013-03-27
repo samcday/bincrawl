@@ -1,19 +1,17 @@
 package au.com.samcday.bincrawl.dao;
 
+import au.com.samcday.bincrawl.BinaryClassifier;
 import au.com.samcday.bincrawl.dao.entities.Binary;
 import au.com.samcday.jnntp.Overview;
 
-public interface BinaryDao {
-    /**
-     * Creates a new binary if one does not already exist.
-     * @return a binary hash representing the binary just created/updated.
-     */
-    public String createOrUpdateBinary(String group, String processedSubject, int numParts, Overview overview);
+import java.util.List;
 
+public interface BinaryDao {
     /**
      * Adds a part to an existing binary. Will also flag the binary as complete if enough parts have been received.
      */
-    public void addBinaryPart(String binaryHash, int partNum, Overview overview);
+    public String addBinaryPart(String group, String subject, int partNum, int numParts, Overview overview,
+                                BinaryClassifier.Classification classification);
 
     /**
      * Deletes binary and all supporting data.
@@ -30,9 +28,9 @@ public interface BinaryDao {
     /**
      * Blocks for a completed binary and executes the handler with binary data.
      */
-    public void processCompletedBinary(CompletedBinaryHandler handler);
+    public void processCompletedRelease(CompletedReleaseHandler handler);
 
-    public static interface CompletedBinaryHandler {
-        public boolean handle(Binary completed) throws Exception;
+    public static interface CompletedReleaseHandler {
+        public boolean handle(List<Binary> completed) throws Exception;
     }
 }

@@ -1,8 +1,10 @@
 package au.com.samcday.bincrawl.dao;
 
+import au.com.samcday.bincrawl.BinaryClassifier;
 import au.com.samcday.bincrawl.RedisKeys;
 import au.com.samcday.bincrawl.dao.entities.Binary;
 import au.com.samcday.bincrawl.dao.entities.BinaryPart;
+import au.com.samcday.bincrawl.dto.Release;
 import au.com.samcday.bincrawl.pool.BetterJedisPool;
 import au.com.samcday.bincrawl.pool.PooledJedis;
 import au.com.samcday.jnntp.Overview;
@@ -40,18 +42,20 @@ public class BinaryDaoRedisImpl implements BinaryDao {
     }
 
     @Override
-    public String createOrUpdateBinary(String group, String subject, int numParts, Overview overview) {
+    public String addBinaryPart(String group, String subject, int partNum, int numParts, Overview overview,
+                                BinaryClassifier.Classification classification) {
         final String binaryHash = HASHER.hashString(group + subject).toString();
         String keyName = RedisKeys.binary(binaryHash);
 
-        Map<String, String> data = ImmutableMap.of(
-            RedisKeys.binarySubject, subject,
-            RedisKeys.binaryTotalParts, Integer.toString(numParts),
-            RedisKeys.binaryDate, Long.toString(overview.getDate().getTime()),
-            RedisKeys.binaryGroup, group
-        );
-
         try(PooledJedis redisClient = this.redisPool.get()) {
+            Map<String, String> data = ImmutableMap.of(
+                RedisKeys.binarySubject, subject,
+                RedisKeys.binaryTotalParts, Integer.toString(numParts),
+                RedisKeys.binaryDate, Long.toString(overview.getDate().getTime()),
+                RedisKeys.binaryGroup, group
+            );
+
+
             while(true) {
                 if(redisClient.exists(keyName)) {
                     break;
@@ -67,13 +71,6 @@ public class BinaryDaoRedisImpl implements BinaryDao {
                 }
             }
 
-            return binaryHash;
-        }
-    }
-
-    @Override
-    public void addBinaryPart(String binaryHash, int partNum, Overview overview) {
-        try(PooledJedis redisClient = this.redisPool.get()) {
             String binaryKey = RedisKeys.binary(binaryHash);
 
             boolean added = redisClient.hsetnx(binaryKey, RedisKeys.binaryPart(partNum), this.objectMapper.writeValueAsString(
@@ -85,13 +82,22 @@ public class BinaryDaoRedisImpl implements BinaryDao {
 
                 if(numPartsDone >= totalParts) {
                     LOG.trace("Got all parts for binary {}", binaryHash);
-                    redisClient.lpush(RedisKeys.binaryComplete, binaryHash);
+
+                    String releaseId = Release.buildId(group, classification.name);
+
+                    long releaseBinaries = redisClient.lpush(RedisKeys.releaseBinaries(releaseId), binaryHash);
+
+                    if(releaseBinaries == classification.totalParts) {
+                        redisClient.lpush(RedisKeys.releaseComplete, releaseId);
+                    }
                 }
             }
         }
         catch(JsonProcessingException jpe) {
             throw Throwables.propagate(jpe);
         }
+
+        return binaryHash;
     }
 
     @Override
@@ -133,27 +139,38 @@ public class BinaryDaoRedisImpl implements BinaryDao {
     }
 
     @Override
-    public void processCompletedBinary(CompletedBinaryHandler handler) {
+    public void processCompletedRelease(CompletedReleaseHandler handler) {
         try(PooledJedis redisClient = this.redisPool.get()) {
-            String binaryHash = redisClient.brpopsingle(0, RedisKeys.binaryComplete);
-            LOG.info("Processing complete binary {}", binaryHash);
+            String releaseId = redisClient.brpopsingle(0, RedisKeys.releaseComplete);
+            LOG.info("Processing complete release {}", releaseId);
 
-            Binary completed = this.getBinary(binaryHash);
-            if(completed == null) return;
+            List<String> binaryHashes = redisClient.lrange(RedisKeys.releaseBinaries(releaseId), 0, -1);
+            List<Binary> binaries = new ArrayList<>(binaryHashes.size());
+
+            for(String binaryHash : binaryHashes) {
+                Binary completed = this.getBinary(binaryHash);
+                if(completed == null) continue; // Shouldn't happen?
+                binaries.add(completed);
+            }
 
             boolean success = false;
             try {
-                success = handler.handle(completed);
+                success = handler.handle(binaries);
             }
             catch(Exception e) {
                 LOG.warn("Caught unhandled exception from completed binary handler.", e);
             }
             finally {
                 if(success) {
-                    this.deleteBinary(binaryHash);
+                    Transaction t = redisClient.multi();
+                    for(String binaryHash : binaryHashes) {
+                        t.del(RedisKeys.binary(binaryHash));
+                    }
+                    t.del(RedisKeys.releaseBinaries(releaseId));
+                    t.exec();
                 }
                 else {
-                    redisClient.lpush(RedisKeys.binaryComplete, binaryHash);
+                    redisClient.lpush(RedisKeys.releaseComplete, releaseId);
                 }
             }
         }

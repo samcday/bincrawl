@@ -1,8 +1,8 @@
 package au.com.samcday.bincrawl;
 
-import au.com.samcday.bincrawl.dto.BinarySegment;
+import au.com.samcday.bincrawl.dao.entities.Binary;
+import au.com.samcday.bincrawl.dao.entities.BinaryPart;
 import au.com.samcday.bincrawl.dto.Release;
-import au.com.samcday.bincrawl.dto.ReleaseBinary;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.inject.Inject;
 import org.ektorp.CouchDbConnector;
@@ -40,7 +40,7 @@ public class NzbGenerator {
                     }; w.writeEndElement();
                 }; w.writeEndElement();
 
-                for(ReleaseBinary binary : ImmutableSortedSet.copyOf(ReleaseBinary.COMPARATOR, release.getBinaries())) {
+                for(Binary binary : ImmutableSortedSet.copyOf(Binary.COMPARATOR, release.getBinaries())) {
                     w.writeStartElement("file");
 //                    w.writeAttribute("poster", binary.getPoster());
                     w.writeAttribute("subject", binary.getSubject());
@@ -54,9 +54,9 @@ public class NzbGenerator {
 
                         w.writeStartElement("segments");
                         int num = 1;
-                        for(BinarySegment segment : binary.getBinarySegments()) {
+                        for(BinaryPart segment : binary.getParts()) {
                             w.writeStartElement("segment");
-                            w.writeAttribute("bytes", Integer.toString(segment.getSize()));
+                            w.writeAttribute("bytes", Long.toString(segment.getSize()));
                             w.writeAttribute("number", Integer.toString(num++));
                             {
                                 w.writeCharacters(segment.getMessageId().substring(1, segment.getMessageId().length() - 1));

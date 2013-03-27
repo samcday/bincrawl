@@ -126,12 +126,16 @@ public class Crawler {
         String parsedSubject = buf.toString();
         LOG.trace("Found binary part {} of {} for binary with subject {}", partNum, totalParts, parsedSubject);
 
-        if(this.binaryClassifier.classify(group, parsedSubject) != null) {
-            String binaryHash = this.binaryDao.createOrUpdateBinary(group, parsedSubject, totalParts, overview);
-            this.binaryDao.addBinaryPart(binaryHash, partNum, overview);
+        BinaryClassifier.Classification classification = this.binaryClassifier.classify(group, parsedSubject);
+        if(classification != null && classification.totalParts > 1) {
+            this.binaryDao.addBinaryPart(group, parsedSubject, partNum, totalParts, overview, classification);
+//            this.binaryDao.addBinaryPart(binaryHash, partNum, overview, classification);
+        }
+        else if(classification == null) {
+            LOG.trace("Skipping {} of {} as we couldn't classify it.", overview.getArticle(), group);
         }
         else {
-            LOG.trace("Skipping {} of {} as we couldn't classify it.", overview.getArticle(), group);
+            LOG.info("Skipping {} of {} as it contained only one binary part.", overview.getArticle(), group);
         }
 
         return true;

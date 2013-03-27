@@ -3,9 +3,16 @@ package au.com.samcday.bincrawl.dao.entities;
 import com.google.common.collect.ImmutableList;
 import org.joda.time.DateTime;
 
+import java.util.Comparator;
 import java.util.List;
 
 public class Binary {
+    public static final Comparator<Binary> COMPARATOR  = new Comparator<Binary>() {
+        @Override
+        public int compare(Binary o1, Binary o2) {
+            return String.CASE_INSENSITIVE_ORDER.compare(o1.getSubject(), o2.getSubject());
+        }
+    };
     private String binaryHash;
     private String subject;
     private int totalParts;

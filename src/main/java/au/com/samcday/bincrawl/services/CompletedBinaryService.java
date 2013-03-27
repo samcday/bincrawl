@@ -13,6 +13,7 @@ import com.yammer.metrics.core.Timer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -43,13 +44,12 @@ public class CompletedBinaryService extends AbstractIdleService {
     }
 
     private void doProcess() {
-        this.binaryDao.processCompletedBinary(new BinaryDao.CompletedBinaryHandler() {
+        this.binaryDao.processCompletedRelease(new BinaryDao.CompletedReleaseHandler() {
             @Override
-            public boolean handle(Binary completed) throws Exception {
+            public boolean handle(List<Binary> completed) throws Exception {
                 try(CloseableTimer ignored = CloseableTimer.startTimer(processingTimer)) {
-                    BinaryClassifier.Classification classification = binaryClassifier.classify(completed.getGroup(), completed.getSubject());
-                    String releaseId = releaseDao.addCompletedBinary(completed.getGroup(), classification, completed);
-                    LOG.info("Processed completed binary {} for release {}", completed.getBinaryHash(), releaseId);
+                    String releaseId = releaseDao.createReleaseFromBinaries(completed);
+//                    LOG.info("Processed completed binary {} for release {}", completed.getBinaryHash(), releaseId);
                     return true;
                 }
             }

@@ -2,44 +2,42 @@ package au.com.samcday.bincrawl.dao;
 
 import au.com.samcday.bincrawl.BinaryClassifier;
 import au.com.samcday.bincrawl.dao.entities.Binary;
-import au.com.samcday.bincrawl.dao.exceptions.ReleaseUpdateException;
 import au.com.samcday.bincrawl.dto.Release;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import org.ektorp.CouchDbConnector;
-import org.ektorp.UpdateConflictException;
 import org.ektorp.http.RestTemplate;
 import org.ektorp.http.URI;
+import org.joda.time.DateTime;
 
-import java.util.Map;
+import java.util.List;
 
 public class ReleaseDaoCouchImpl implements ReleaseDao {
     private CouchDbConnector couchDb;
     private ObjectMapper objectMapper;
+    private BinaryClassifier binaryClassifier;
 
     @Inject
-    public ReleaseDaoCouchImpl(CouchDbConnector couchDb, ObjectMapper objectMapper) {
+    public ReleaseDaoCouchImpl(CouchDbConnector couchDb, ObjectMapper objectMapper, BinaryClassifier binaryClassifier) {
         this.couchDb = couchDb;
         this.objectMapper = objectMapper;
+        this.binaryClassifier = binaryClassifier;
     }
 
     @Override
-    public String addCompletedBinary(String group, BinaryClassifier.Classification classification, Binary binary) {
-        String releaseId = Release.buildId(group, classification.name);
-        Map<String, Object> data = ImmutableMap.of("group", group, "binary", binary, "classification", classification);
+    public String createReleaseFromBinaries(List<Binary> binary) {
+        Binary reference = binary.get(0);
+        BinaryClassifier.Classification classification = this.binaryClassifier.classify(reference.getGroup(), reference.getSubject());
+        String releaseId = Release.buildId(reference.getGroup(), classification.name);
 
-        int tries = 5;
-        try {
-            if(tries-- < 0) {
-                throw new ReleaseUpdateException(new Exception("Failed to call update handler after 5 tries."));
-            }
-            this.executeBetterUpdateHandler(releaseId, data);
-        }
-        catch(UpdateConflictException uce) {
+        Release newRelease = new Release();
+        newRelease.setName(classification.name);
+        newRelease.setCrawledDate(new DateTime());
+        newRelease.setBinaries(binary);
 
-        }
+        this.couchDb.create(releaseId, newRelease);
+
         return releaseId;
     }
 
