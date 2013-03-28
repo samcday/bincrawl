@@ -2,7 +2,7 @@ package au.com.samcday.bincrawl;
 
 import au.com.samcday.bincrawl.dao.BinaryDao;
 import au.com.samcday.bincrawl.pool.NntpClientPool;
-import au.com.samcday.bincrawl.pool.PooledNntpClient;
+import au.com.samcday.jnntp.NntpClient;
 import au.com.samcday.jnntp.Overview;
 import au.com.samcday.jnntp.OverviewList;
 import com.google.inject.Inject;
@@ -43,49 +43,47 @@ public class Crawler {
         this.binaryClassifier = binaryClassifier;
     }
 
-    public Result crawl(String group, long from, long to) throws Exception {
-        try(PooledNntpClient nntpClient = this.nntpClientPool.borrow()) {
-            Counter crawledArticleCounter = Metrics.newCounter(Crawler.class, "crawled", group);
+    public Result crawl(NntpClient nntpClient, String group, long from, long to) throws Exception {
+        Counter crawledArticleCounter = Metrics.newCounter(Crawler.class, "crawled", group);
 
-            LOG.info("Starting crawl of group {} of articles {} - {}", group, from, to);
-            nntpClient.group(group);
+        LOG.info("Starting crawl of group {} of articles {} - {}", group, from, to);
+        nntpClient.group(group);
 
-            Result result = new Result();
+        Result result = new Result();
 
-            OverviewList overviewList = nntpClient.overview(from, to);
-            MutableDateTime earliest = new MutableDateTime(Long.MAX_VALUE), latest = new MutableDateTime(0);
+        OverviewList overviewList = nntpClient.overview(from, to);
+        MutableDateTime earliest = new MutableDateTime(Long.MAX_VALUE), latest = new MutableDateTime(0);
 
-            for(Overview overview : overviewList) {
-                LOG.trace("Processing group {} article {}", group, overview.getArticle());
+        for(Overview overview : overviewList) {
+            LOG.trace("Processing group {} article {}", group, overview.getArticle());
 
-                TimerContext ctx = this.crawlTimer.time();
-                try {
-                    if(!this.processItem(group, overview)) {
-                        result.ignored++;
-                    }
-                    Date date = overview.getDate();
-                    if(date != null) {
-                        long dateInstant = date.getTime();
-                        if(earliest.isAfter(dateInstant)) {
-                            earliest.setMillis(dateInstant);
-                        }
-                        if(latest.isBefore(dateInstant)) {
-                            latest.setMillis(dateInstant);
-                        }
-
-                    }
-                    result.processed++;
-                    crawledArticleCounter.inc();
+            TimerContext ctx = this.crawlTimer.time();
+            try {
+                if(!this.processItem(group, overview)) {
+                    result.ignored++;
                 }
-                finally {
-                    ctx.stop();
+                Date date = overview.getDate();
+                if(date != null) {
+                    long dateInstant = date.getTime();
+                    if(earliest.isAfter(dateInstant)) {
+                        earliest.setMillis(dateInstant);
+                    }
+                    if(latest.isBefore(dateInstant)) {
+                        latest.setMillis(dateInstant);
+                    }
+
                 }
+                result.processed++;
+                crawledArticleCounter.inc();
             }
-
-            result.missingArticles = overviewList.getMissingArticles();
-            result.dateRange = new Interval(earliest, latest);
-            return result;
+            finally {
+                ctx.stop();
+            }
         }
+
+        result.missingArticles = overviewList.getMissingArticles();
+        result.dateRange = new Interval(earliest, latest);
+        return result;
     }
 
     private boolean processItem(String group, Overview overview) {

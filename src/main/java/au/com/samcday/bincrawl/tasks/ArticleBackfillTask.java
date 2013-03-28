@@ -1,10 +1,12 @@
 package au.com.samcday.bincrawl.tasks;
 
 import au.com.samcday.bincrawl.Crawler;
+import au.com.samcday.bincrawl.NntpWorkPool;
 import au.com.samcday.bincrawl.RedisKeys;
 import au.com.samcday.bincrawl.pool.BetterJedisPool;
 import au.com.samcday.bincrawl.pool.PooledJedis;
 import au.com.samcday.jnntp.GroupInfo;
+import au.com.samcday.jnntp.NntpClient;
 import com.google.inject.Inject;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
@@ -12,12 +14,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Pipeline;
 
-import java.util.concurrent.Callable;
-
 /**
  * Handles crawling a number of posts from specified group. Returns true if there's more articles to be updated.
  */
-public class ArticleBackfillTask implements Callable<Boolean> {
+public class ArticleBackfillTask implements NntpWorkPool.NntpCallable<Boolean> {
     private static final Logger LOG = LoggerFactory.getLogger(ArticleBackfillTask.class);
 
     private BetterJedisPool redisPool;
@@ -39,7 +39,7 @@ public class ArticleBackfillTask implements Callable<Boolean> {
     }
 
     @Override
-    public Boolean call() throws Exception {
+    public Boolean call(NntpClient client) throws Exception {
         try (PooledJedis redisClient = this.redisPool.get()) {
             int maxDays = redisClient.hgetint(RedisKeys.group(this.group), RedisKeys.groupMaxAge).or(-1);
             if(maxDays < 0) {
@@ -62,7 +62,7 @@ public class ArticleBackfillTask implements Callable<Boolean> {
 
             long start = Math.max(current - this.numPosts, this.groupInfo.low);
 
-            Crawler.Result result = this.crawler.crawl(this.group, start, current);
+            Crawler.Result result = this.crawler.crawl(client, this.group, start, current);
 
             // Push any missing articles into missing list.
             Pipeline p = redisClient.pipelined();

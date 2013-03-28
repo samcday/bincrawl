@@ -1,36 +1,32 @@
 package au.com.samcday.bincrawl.tasks;
 
 import au.com.samcday.bincrawl.Crawler;
+import au.com.samcday.bincrawl.NntpWorkPool;
 import au.com.samcday.bincrawl.RedisKeys;
 import au.com.samcday.bincrawl.pool.BetterJedisPool;
-import au.com.samcday.bincrawl.pool.NntpClientPool;
 import au.com.samcday.bincrawl.pool.PooledJedis;
-import au.com.samcday.bincrawl.pool.PooledNntpClient;
 import au.com.samcday.jnntp.GroupInfo;
+import au.com.samcday.jnntp.NntpClient;
 import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Pipeline;
 
-import java.util.concurrent.Callable;
-
 /**
  * Handles crawling a number of posts from specified group. Returns true if there's more articles to be updated.
  */
-public class ArticleUpdateTask implements Callable<Boolean> {
+public class ArticleUpdateTask implements NntpWorkPool.NntpCallable<Boolean> {
     private static final Logger LOG = LoggerFactory.getLogger(ArticleUpdateTask.class);
 
     private BetterJedisPool redisPool;
-    private NntpClientPool nntpClientPool;
     private Crawler crawler;
     private final int numPosts = 20000;         // TODO: make this configurable
     private String group;
     private GroupInfo groupInfo;
 
     @Inject
-    public ArticleUpdateTask(BetterJedisPool redisPool, NntpClientPool nntpClientPool, Crawler crawler) {
+    public ArticleUpdateTask(BetterJedisPool redisPool, Crawler crawler) {
         this.redisPool = redisPool;
-        this.nntpClientPool = nntpClientPool;
         this.crawler = crawler;
     }
 
@@ -40,8 +36,8 @@ public class ArticleUpdateTask implements Callable<Boolean> {
     }
 
     @Override
-    public Boolean call() throws Exception {
-        try (PooledJedis redisClient = this.redisPool.get(); PooledNntpClient nntpClient = this.nntpClientPool.borrow()) {
+    public Boolean call(NntpClient nntpClient) throws Exception {
+        try (PooledJedis redisClient = this.redisPool.get()) {
             long current = redisClient.hgetlong(RedisKeys.group(this.group), RedisKeys.groupEnd).or(this.groupInfo.high);
             LOG.info("Apparently I'm up to article {} for group {}", current, this.group);
             long end;
@@ -50,7 +46,7 @@ public class ArticleUpdateTask implements Callable<Boolean> {
                 long start = current + 1;
                 end = Math.min(start + this.numPosts, this.groupInfo.high);
 
-                Crawler.Result result = this.crawler.crawl(this.group, current, end);
+                Crawler.Result result = this.crawler.crawl(nntpClient, this.group, current, end);
 
                 // Push any missing articles into missing list.
                 Pipeline p = redisClient.pipelined();

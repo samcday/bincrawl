@@ -1,7 +1,7 @@
 package au.com.samcday.bincrawl.web.resources;
 
 
-import au.com.samcday.bincrawl.pool.BetterJedisPool;
+import au.com.samcday.bincrawl.NntpWorkPool;
 import au.com.samcday.bincrawl.pool.NntpClientPool;
 import au.com.samcday.bincrawl.services.CrawlService;
 import com.google.common.primitives.Ints;
@@ -16,11 +16,13 @@ import javax.ws.rs.core.Response;
 @Consumes(MediaType.TEXT_PLAIN)
 public class NntpResource {
     private CrawlService crawlService;
+    private NntpWorkPool nntpWorkPool;
     private NntpClientPool nntpClientPool;
 
     @Inject
-    public NntpResource(CrawlService crawlService, NntpClientPool nntpClientPool) {
+    public NntpResource(CrawlService crawlService, NntpWorkPool nntpWorkPool, NntpClientPool nntpClientPool) {
         this.crawlService = crawlService;
+        this.nntpWorkPool = nntpWorkPool;
         this.nntpClientPool = nntpClientPool;
     }
 
@@ -37,7 +39,7 @@ public class NntpResource {
         if(newMaxInt == null) {
             throw new WebApplicationException(Response.Status.BAD_REQUEST);
         }
-        this.crawlService.setMaxConnections(newMaxInt);
+        this.nntpWorkPool.setMaxConnections(newMaxInt);
         this.nntpClientPool.setMaxActive(newMaxInt);
     }
 

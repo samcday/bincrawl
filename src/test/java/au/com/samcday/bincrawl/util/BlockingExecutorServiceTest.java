@@ -50,6 +50,12 @@ public class BlockingExecutorServiceTest {
     }
 
     @Test
+    public void testWaitForAllOnEmpty() throws InterruptedException {
+        BlockingExecutorService svc = new BlockingExecutorService(1);
+        svc.waitForAll();
+    }
+
+    @Test
     public void testDynamicIncrease() {
         final BlockingExecutorService svc = new BlockingExecutorService(1);
 
