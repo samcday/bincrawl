@@ -100,7 +100,7 @@ public class CrawlService extends AbstractExecutionThreadService {
 
                     @Override
                     public void onFailure(Throwable t) {
-                        LOG.warn("Error updating {}.", updateGroup, t);
+                        LOG.error("Error updating {}.", updateGroup, t);
                     }
                 }, this.listenerExecutor);
                 doingSomething = true;
@@ -109,19 +109,19 @@ public class CrawlService extends AbstractExecutionThreadService {
             final String backfillGroup = this.backfillGroups.poll();
             if(backfillGroup != null) {
                 ArticleBackfillTask task = backfillTaskProvider.get();
-                task.configure(updateGroup, groups.get(updateGroup));
+                task.configure(backfillGroup, groups.get(backfillGroup));
                 Futures.addCallback(this.nntpWorkPool.submit(task), new FutureCallback<Boolean>() {
                     @Override
                     public void onSuccess(Boolean result) {
                         try(AutoLockable ignored = AutoLockable.lock(workLock)) {
-                            backfillGroups.offer(updateGroup);
+                            backfillGroups.offer(backfillGroup);
                             workAvailable.signal();
                         }
                     }
 
                     @Override
                     public void onFailure(Throwable t) {
-                        LOG.warn("Error backfilling {}.", updateGroup, t);
+                        LOG.error("Error backfilling {}.", backfillGroup, t);
                     }
                 }, this.listenerExecutor);
                 doingSomething = true;

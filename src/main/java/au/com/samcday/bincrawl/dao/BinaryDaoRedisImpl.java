@@ -88,6 +88,7 @@ public class BinaryDaoRedisImpl implements BinaryDao {
                     long releaseBinaries = redisClient.lpush(RedisKeys.releaseBinaries(releaseId), binaryHash);
 
                     if(releaseBinaries == classification.totalParts) {
+                        LOG.info("Got all binaries for release {}", releaseId);
                         redisClient.lpush(RedisKeys.releaseComplete, releaseId);
                     }
                 }
@@ -170,7 +171,9 @@ public class BinaryDaoRedisImpl implements BinaryDao {
                     t.exec();
                 }
                 else {
-                    redisClient.lpush(RedisKeys.releaseComplete, releaseId);
+                    // TODO: finish implementing retry logic.
+                    LOG.warn("Couldn't process completed release {}, will try again later.", releaseId);
+                    redisClient.lpush(RedisKeys.releaseCompleteRetry, releaseId);
                 }
             }
         }

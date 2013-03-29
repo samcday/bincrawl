@@ -1,6 +1,5 @@
 package au.com.samcday.bincrawl.services;
 
-import au.com.samcday.bincrawl.BinaryClassifier;
 import au.com.samcday.bincrawl.dao.BinaryDao;
 import au.com.samcday.bincrawl.dao.ReleaseDao;
 import au.com.samcday.bincrawl.dao.entities.Binary;
@@ -25,14 +24,12 @@ public class CompletedBinaryService extends AbstractIdleService {
 
     private BinaryDao binaryDao;
     private ReleaseDao releaseDao;
-    private BinaryClassifier binaryClassifier;
     private ExecutorService executorService;
 
     @Inject
-    public CompletedBinaryService(BinaryDao binaryDao, ReleaseDao releaseDao, BinaryClassifier binaryClassifier) {
+    public CompletedBinaryService(BinaryDao binaryDao, ReleaseDao releaseDao) {
         this.binaryDao = binaryDao;
         this.releaseDao = releaseDao;
-        this.binaryClassifier = binaryClassifier;
     }
 
     @Override
@@ -49,7 +46,7 @@ public class CompletedBinaryService extends AbstractIdleService {
             public boolean handle(List<Binary> completed) throws Exception {
                 try(CloseableTimer ignored = CloseableTimer.startTimer(processingTimer)) {
                     String releaseId = releaseDao.createReleaseFromBinaries(completed);
-//                    LOG.info("Processed completed binary {} for release {}", completed.getBinaryHash(), releaseId);
+                    LOG.info("Processed completed binaries for release {}", releaseId);
                     return true;
                 }
             }

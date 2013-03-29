@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
 import org.ektorp.CouchDbConnector;
+import org.ektorp.UpdateConflictException;
 import org.ektorp.http.RestTemplate;
 import org.ektorp.http.URI;
 import org.joda.time.DateTime;
@@ -36,7 +37,12 @@ public class ReleaseDaoCouchImpl implements ReleaseDao {
         newRelease.setCrawledDate(new DateTime());
         newRelease.setBinaries(binary);
 
-        this.couchDb.create(releaseId, newRelease);
+        try {
+            this.couchDb.create(releaseId, newRelease);
+        }
+        catch(UpdateConflictException uce) {
+            return null;
+        }
 
         return releaseId;
     }

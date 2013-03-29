@@ -10,19 +10,15 @@ import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * All jobs that need to execute against an NNTP connection use this pool, so that connection limits can be enforced.
  */
 @Singleton
-public class NntpWorkPool extends BlockingExecutorService implements ListeningExecutorService {
+public class NntpWorkPool extends BlockingExecutorService {
     private int maxConnections;
     private ListeningExecutorService listenable;
     private NntpClientPool clientPool;
@@ -36,7 +32,7 @@ public class NntpWorkPool extends BlockingExecutorService implements ListeningEx
     }
 
     public ListenableFuture<?> submit(final NntpRunnable runnable) {
-        return this.submit(new Runnable() {
+        return this.listenable.submit(new Runnable() {
             @Override
             public void run() {
                 try(PooledNntpClient client = clientPool.borrow()) {
@@ -47,7 +43,7 @@ public class NntpWorkPool extends BlockingExecutorService implements ListeningEx
     }
 
     public <T> ListenableFuture<T> submit(final NntpCallable<T> callable) {
-        return this.submit(new Callable<T>() {
+        return this.listenable.submit(new Callable<T>() {
             @Override
             public T call() throws Exception {
                 try(PooledNntpClient client = clientPool.borrow()) {
@@ -60,31 +56,6 @@ public class NntpWorkPool extends BlockingExecutorService implements ListeningEx
     public void setMaxConnections(int maxConnections) {
         this.maxConnections = maxConnections;
         this.resize(maxConnections);
-    }
-
-    @Override
-    public <T> ListenableFuture<T> submit(Callable<T> task) {
-        return listenable.submit(task);
-    }
-
-    @Override
-    public ListenableFuture<?> submit(Runnable task) {
-        return listenable.submit(task);
-    }
-
-    @Override
-    public <T> ListenableFuture<T> submit(Runnable task, T result) {
-        return listenable.submit(task, result);
-    }
-
-    @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        return listenable.invokeAll(tasks);
-    }
-
-    @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
-        return listenable.invokeAll(tasks, timeout, unit);
     }
 
     private static final class CrawlServiceThreadFactory implements ThreadFactory {

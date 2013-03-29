@@ -9,6 +9,7 @@ public class RedisKeys {
     }
 
     public static String releaseComplete = "releaseComplete";
+    public static String releaseCompleteRetry = "releaseCompleteRetry";
 
     public static final String binary(String hash) {
         return "b:" + hash;
