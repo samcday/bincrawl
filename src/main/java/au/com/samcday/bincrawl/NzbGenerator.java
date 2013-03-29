@@ -2,7 +2,7 @@ package au.com.samcday.bincrawl;
 
 import au.com.samcday.bincrawl.dao.entities.Binary;
 import au.com.samcday.bincrawl.dao.entities.BinaryPart;
-import au.com.samcday.bincrawl.dto.Release;
+import au.com.samcday.bincrawl.dao.entities.Release;
 import com.google.common.collect.ImmutableSortedSet;
 import com.google.inject.Inject;
 import org.ektorp.CouchDbConnector;

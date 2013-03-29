@@ -2,7 +2,7 @@ package au.com.samcday.bincrawl.dao;
 
 import au.com.samcday.bincrawl.BinaryClassifier;
 import au.com.samcday.bincrawl.dao.entities.Binary;
-import au.com.samcday.bincrawl.dto.Release;
+import au.com.samcday.bincrawl.dao.entities.Release;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;

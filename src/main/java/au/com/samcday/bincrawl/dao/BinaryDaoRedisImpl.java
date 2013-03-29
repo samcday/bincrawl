@@ -4,7 +4,7 @@ import au.com.samcday.bincrawl.BinaryClassifier;
 import au.com.samcday.bincrawl.RedisKeys;
 import au.com.samcday.bincrawl.dao.entities.Binary;
 import au.com.samcday.bincrawl.dao.entities.BinaryPart;
-import au.com.samcday.bincrawl.dto.Release;
+import au.com.samcday.bincrawl.dao.entities.Release;
 import au.com.samcday.bincrawl.pool.BetterJedisPool;
 import au.com.samcday.bincrawl.pool.PooledJedis;
 import au.com.samcday.jnntp.Overview;
