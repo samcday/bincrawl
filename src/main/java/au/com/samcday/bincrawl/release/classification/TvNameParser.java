@@ -1,4 +1,4 @@
-package au.com.samcday.bincrawl;
+package au.com.samcday.bincrawl.release.classification;
 
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Joiner;
