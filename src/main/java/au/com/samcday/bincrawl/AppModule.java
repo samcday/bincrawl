@@ -15,6 +15,7 @@ import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import org.apache.http.impl.client.DefaultHttpClient;
 import org.ektorp.CouchDbConnector;
 import org.ektorp.CouchDbInstance;
 import org.ektorp.http.HttpClient;
@@ -83,6 +84,12 @@ public class AppModule implements Module {
         ObjectMapper mapper = new ObjectMapper();
         mapper.registerModule(new JodaModule());
         return mapper;
+    }
+
+    @Provides
+    @Singleton
+    org.apache.http.client.HttpClient provideHttpClient() {
+        return new DefaultHttpClient();
     }
 
 }

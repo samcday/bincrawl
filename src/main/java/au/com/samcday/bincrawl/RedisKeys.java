@@ -4,6 +4,9 @@ package au.com.samcday.bincrawl;
  * TODO: should be putting a lot of the small discrete domain of key names here in flyweights.
  */
 public class RedisKeys {
+    public static String releaseNfo = "releaseNfo";
+    public static String tvRage = "tvr";
+
     public static String releaseBinaries(String releaseId) {
         return "releaseBinaries:" + releaseId;
     }
